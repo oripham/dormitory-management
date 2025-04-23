@@ -5,15 +5,43 @@
 {% block content %}
 <div class="container mt-5">
     <h1 class="text-center mb-4">Quản lý hóa đơn</h1>
+    
+    <!-- Bộ lọc loại hóa đơn -->
+    <div class="row mb-4">
+        <div class="col-md-6 offset-md-3">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Lọc theo loại hóa đơn</h5>
+                </div>
+                <div class="card-body">
+                    <form id="filterForm" method="get" action="" class="row g-3 align-items-center">
+                        <div class="col-md-8">
+                            <select name="loai_hoa_don" id="loai_hoa_don" class="form-select">
+                                <option value="" {% if not loai_hoa_don %}selected{% endif %}>Tất cả</option>
+                                <option value="Tiền phòng" {% if loai_hoa_don == 'Tiền phòng' %}selected{% endif %}>Tiền phòng</option>
+                                <option value="Điện nước" {% if loai_hoa_don == 'Điện nước' %}selected{% endif %}>Điện nước</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-primary w-100">Lọc</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <div class="table-responsive">
         <table class="table table-bordered table-hover table-striped" id="hoaDonTable">
             <thead class="table-primary text-center">
                 <tr>
                     <th>Mã hóa đơn</th>
                     <th>Sinh viên</th>
+                    <th>Phòng</th>
+                    <th>Loại hóa đơn</th>
+                    <th>Tháng</th>
                     <th>Số tiền</th>
                     <th>Trạng thái</th>
-                    <th>Ngày tạo</th>
                     <th>Hành động</th>
                 </tr>
             </thead>
@@ -21,35 +49,52 @@
                 {% for hoa_don in hoa_don_list %}
                 <tr>
                     <td class="text-center">{{ hoa_don.ma_hoa_don }}</td>
-                    <td>{{ hoa_don.sinh_vien.ho_ten }} ({{ hoa_don.sinh_vien.mssv }})</td>
-                    <td class="text-end">{{ hoa_don.so_tien|floatformat:2 }} VND</td>
+                    <td>{{ hoa_don.mssv.ho_ten }} ({{ hoa_don.mssv.mssv }})</td>
+                    <td class="text-center">{{ hoa_don.ma_phong.ma_phong }}</td>
                     <td class="text-center">
-                        {% if hoa_don.trang_thai == 'Chưa thanh toán' %}
-                            <span class="badge bg-warning text-dark">Chưa thanh toán</span>
-                        {% elif hoa_don.trang_thai == 'Đã thanh toán' %}
-                            <span class="badge bg-success">Đã thanh toán</span>
+                        {% if hoa_don.loai_hoa_don == 'Điện nước' %}
+                            <span class="badge bg-info">Điện nước</span>
+                        {% elif hoa_don.loai_hoa_don == 'Tiền phòng' %}
+                            <span class="badge bg-secondary">Tiền phòng</span>
+                        {% else %}
+                            <span class="badge bg-dark">{{ hoa_don.loai_hoa_don }}</span>
                         {% endif %}
                     </td>
-                    <td class="text-center">{{ hoa_don.ngay_tao|date:"d/m/Y" }}</td>
+                    <td class="text-center">{{ hoa_don.thang }}/{{ hoa_don.ngay_thanh_toan.year|default:current_year }}</td>
+                    <td class="text-end">{{ hoa_don.so_tien|floatformat:0 }} VNĐ</td>
+                    <td class="text-center">
+                        {% if hoa_don.ngay_thanh_toan %}
+                            <span class="badge bg-success">Đã thanh toán</span>
+                            <br><small>{{ hoa_don.ngay_thanh_toan|date:"d/m/Y" }}</small>
+                        {% else %}
+                            <span class="badge bg-warning text-dark">Chưa thanh toán</span>
+                        {% endif %}
+                    </td>
                     <td class="text-center">
                         <a href="{% url 'chi_tiet_hoa_don' hoa_don.ma_hoa_don %}" class="btn btn-primary btn-sm">Chi tiết</a>
+                        {% if user.taikhoan.role == 'manager' %}
+                            <a href="{% url 'chinh_sua_hoa_don' hoa_don.ma_hoa_don %}" class="btn btn-warning btn-sm">Sửa</a>
+                            <button class="btn btn-danger btn-sm delete-btn" data-id="{{ hoa_don.ma_hoa_don }}">Xóa</button>
+                        {% endif %}
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6" class="text-center">Không có hóa đơn nào.</td>
+                    <td colspan="8" class="text-center">Không có hóa đơn nào.</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
-{% endblock %}
+{% endblock %}  <!-- Kết thúc block content -->
 
 {% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
 <script>
-    // Thêm DataTable để tìm kiếm và phân trang
     document.addEventListener('DOMContentLoaded', function() {
+        // Thêm DataTable để tìm kiếm và phân trang
         if (document.getElementById('hoaDonTable')) {
             $('#hoaDonTable').DataTable({
                 "language": {
@@ -57,6 +102,31 @@
                 },
                 "order": [[ 4, "desc" ]]
             });
+        }
+    });
+    $(document).on('click', '.delete-btn', function () {
+        const maHoaDon = $(this).data('id');
+        console.log(`Đang xóa hóa đơn: ${maHoaDon}`);
+        if (confirm('Bạn có chắc chắn muốn xóa hóa đơn này?')) {
+            fetch(`/xoa-hoa-don/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}',
+                },
+                body: JSON.stringify({
+                    'ma_hoa_don': maHoaDon,
+                }),
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert('Xóa hóa đơn thành công!');
+                    location.reload();
+                } else {
+                    alert('Có lỗi xảy ra khi xóa hóa đơn.');
+                }
+            })
+            .catch(error => console.error('Lỗi:', error));
         }
     });
 </script>

@@ -24,13 +24,13 @@
                     <td class="text-center">{{ phong.so_luong_sv }}</td>
                     <td class="text-center">{{ phong.loai_phong }}</td>
                     <td class="text-center">
-                        {% if phong.trang_thai == 'Trống' %}
-                            <span class="badge bg-success">Trống</span>
-                        {% elif phong.trang_thai == 'Đầy' %}
-                            <span class="badge bg-danger">Đầy</span>
-                        {% else %}
-                            <span class="badge bg-warning">Đang sửa chữa</span>
-                        {% endif %}
+                        <select class="form-select form-select-sm trang-thai-select" data-id="{{ phong.ma_phong }}">
+                            <option value="Trống" {% if phong.trang_thai == 'Trống' %}selected{% endif %}>Trống</option>
+                            <option value="Đầy" {% if phong.trang_thai == 'Đầy' %}selected{% endif %}>Đầy</option>
+                            <option value="Bảo trì" {% if phong.trang_thai == 'Bảo trì' %}selected{% endif %}>Bảo trì</option>
+                            <option value="Đang sửa chữa" {% if phong.trang_thai == 'Đang sửa chữa' %}selected{% endif %}>Đang sửa chữa</option>
+                        </select>
+                        <span class="text-success d-none" id="success-{{ phong.ma_phong }}">Cập nhật thành công!</span>
                     </td>
                 </tr>
                 {% empty %}
@@ -42,4 +42,44 @@
         </table>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Lắng nghe sự kiện thay đổi trạng thái
+        document.querySelectorAll('.trang-thai-select').forEach(function (select) {
+            select.addEventListener('change', function () {
+                const maPhong = this.getAttribute('data-id');
+                const trangThaiMoi = this.value;
+
+                fetch(`/cap-nhat-trang-thai-phong/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}',
+                    },
+                    body: JSON.stringify({
+                        ma_phong: maPhong,
+                        trang_thai: trangThaiMoi,
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const successMessage = document.getElementById(`success-${maPhong}`);
+                        successMessage.classList.remove('d-none');
+                        setTimeout(() => successMessage.classList.add('d-none'), 2000);
+                    } else {
+                        alert('Cập nhật thất bại: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Lỗi:', error);
+                    alert('Đã xảy ra lỗi khi cập nhật trạng thái.');
+                });
+            });
+        });
+    });
+</script>
 {% endblock %}

@@ -54,12 +54,13 @@
                         <td>{{ phong.ma_phong }}</td>
                         <td>{{ phong.day_phong.ten_day_phong }}</td>
                         <td>{{ phong.loai_phong.ten_loai_phong }}</td>
-                        <td>{{ phong.so_luong_sv }}/{{ phong.loai_phong.so_luong }}</td>
+                        <td>{{ phong.so_luong_sv }}</td>
                         <td>
                             <a href="{% url 'ghi_so_dien_nuoc' phong.ma_phong %}" class="btn btn-sm btn-primary">
-                                <i class="fas fa-pencil-alt"></i> Ghi số điện nước
+                                <i class="fas fa-pencil-alt"></i> Ghi số điện nước
                             </a>
                         </td>
+
                     </tr>
                     {% endfor %}
                 </tbody>

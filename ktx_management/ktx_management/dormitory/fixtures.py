@@ -8,6 +8,40 @@ from .models import (
     ViPham, HopDong, BaoHong, HoaDon, TaiSan, ChiTietTaiSan, ChiSoDienNuoc
 )
 
+def create_contracts_for_students_without_contracts():
+    """Tạo hợp đồng cho tất cả sinh viên có trạng thái 'Đang ở' nhưng chưa có hợp đồng"""
+    from django.utils.timezone import now
+    from datetime import timedelta
+
+    # Lọc sinh viên có trạng thái 'Đang ở' nhưng chưa có hợp đồng
+    sinh_vien_chua_co_hop_dong = SinhVien.objects.filter(
+        trang_thai='Đang ở'
+    ).exclude(
+        mssv__in=HopDong.objects.values_list('mssv', flat=True)
+    )
+
+    # Tạo hợp đồng cho từng sinh viên
+    for sv in sinh_vien_chua_co_hop_dong:
+        try:
+            if sv.so_phong:  # Chỉ tạo hợp đồng nếu sinh viên đã được phân phòng
+                phong = Phong.objects.get(ma_phong=sv.so_phong)
+                ngay_vao = now().date()
+                ngay_ra = ngay_vao + timedelta(days=365)  # Hợp đồng có thời hạn 1 năm
+                ma_hop_dong = f'HD{now().year}{sv.mssv[-4:]}'
+
+                HopDong.objects.create(
+                    ma_hop_dong=ma_hop_dong,
+                    ngay_vao=ngay_vao,
+                    ngay_ra=ngay_ra,
+                    ma_phong=phong,
+                    mssv=sv
+                )
+                print(f"Đã tạo hợp đồng cho sinh viên {sv.mssv} - {sv.ho_ten}")
+            else:
+                print(f"Sinh viên {sv.mssv} - {sv.ho_ten} chưa được phân phòng, không thể tạo hợp đồng.")
+        except Exception as e:
+            print(f"Lỗi khi tạo hợp đồng cho sinh viên {sv.mssv}: {e}")
+
 def create_sample_data():
     """Tạo dữ liệu mẫu cho toàn bộ hệ thống"""
     # Xóa dữ liệu hiện tại để tránh lỗi khóa trùng
@@ -239,7 +273,7 @@ def create_students_and_managers():
             ngay_sinh=timezone.now() - timedelta(days=random.randint(6500, 9000)),
             gioi_tinh=random.choice([True, False]),
             que_quan=random.choice(tinh_thanh),
-            trang_thai=random.choice(['Đang ở', 'Đã rời', 'Đăng ký mới', 'Chờ duyệt']),
+            trang_thai=random.choice(['Đang ở', 'Đã rời', 'Chờ duyệt']),
             so_phong=so_phong,
             so_giuong=so_giuong,
             tai_khoan=account

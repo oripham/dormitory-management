@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h3 class="text-center">Tạo Hóa Đơn</h3>
+    <div class="card">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="ma_phong" class="form-label">Phòng</label>
+                    <input type="text" id="ma_phong" class="form-control" value="{{ chi_so.ma_phong.ma_phong }}" readonly>
+                </div>
+                <div class="mb-3">
+                    <label for="thang_nam" class="form-label">Tháng/Năm</label>
+                    <input type="text" id="thang_nam" class="form-control" value="{{ chi_so.thang }}/{{ chi_so.nam }}" readonly>
+                </div>
+                <div class="mb-3">
+                    <label for="tieu_thu_dien" class="form-label">Tiêu Thụ Điện (kWh)</label>
+                    <input type="text" id="tieu_thu_dien" class="form-control" value="{{ tieu_thu_dien }}" readonly>
+                </div>
+                <div class="mb-3">
+                    <label for="tieu_thu_nuoc" class="form-label">Tiêu Thụ Nước (m³)</label>
+                    <input type="text" id="tieu_thu_nuoc" class="form-control" value="{{ tieu_thu_nuoc }}" readonly>
+                </div>
+                <div class="mb-3">
+                    <label for="tong_tien" class="form-label">Tổng Tiền (VND)</label>
+                    <input type="text" id="tong_tien" class="form-control" value="{{ tong_tien }}" readonly>
+                </div>
+                <div class="mb-3">
+                    <label for="sinh_vien_dai_dien" class="form-label">Sinh Viên Đại Diện Thanh Toán</label>
+                    <select id="sinh_vien_dai_dien" name="sinh_vien_dai_dien" class="form-control" required>
+                        <option value="">-- Chọn sinh viên --</option>
+                        {% for sinh_vien in sinh_vien_list %}
+                            <option value="{{ sinh_vien.mssv }}">{{ sinh_vien.ho_ten }} - {{ sinh_vien.mssv }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Tạo Hóa Đơn</button>
+                <a href="{% url 'bao_cao_dien_nuoc' %}" class="btn btn-secondary">Quay Lại</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

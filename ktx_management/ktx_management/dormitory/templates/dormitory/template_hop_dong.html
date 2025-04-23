@@ -1,0 +1,188 @@
+<!-- Dưới đây là code HTML và CSS để tạo template hợp đồng KTX dạng Word -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Hợp đồng nội trú ký túc xá</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 12pt;
+            line-height: 1.5;
+            margin: 2cm;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .left-header {
+            float: left;
+            width: 40%;
+            text-align: center;
+        }
+        .right-header {
+            float: right;
+            width: 40%;
+            text-align: center;
+        }
+        .clear {
+            clear: both;
+        }
+        h1 {
+            font-size: 16pt;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+            text-transform: uppercase;
+        }
+        h2 {
+            font-size: 14pt;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        .indent {
+            text-indent: 1.27cm;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        .signature {
+            margin-top: 30px;
+            width: 100%;
+        }
+        .signature-left {
+            float: left;
+            width: 45%;
+            text-align: center;
+        }
+        .signature-right {
+            float: right;
+            width: 45%;
+            text-align: center;
+        }
+        .signature-space {
+            height: 80px;
+        }
+        .underline {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="left-header">
+            <b>TRƯỜNG ĐẠI HỌC<br>
+            PHÒNG QUẢN LÝ KÝ TÚC XÁ</b>
+            <hr style="width: 80%;">
+        </div>
+        <div class="right-header">
+            <b>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM<br>
+            Độc lập - Tự do - Hạnh phúc</b>
+            <hr style="width: 80%;">
+        </div>
+        <div class="clear"></div>
+    </div>
+
+    <h1>HỢP ĐỒNG NỘI TRÚ KÝ TÚC XÁ</h1>
+    <p style="text-align: center;"><i>Số: [<span class="underline">{{hopDong.ma_hop_dong}}</span>]</i></p>
+
+    <p><b>Căn cứ:</b></p>
+    <p class="indent">- Nhu cầu và nguyện vọng của sinh viên;</p>
+    <p class="indent">- Quy chế công tác học sinh, sinh viên nội trú tại các cơ sở giáo dục thuộc hệ thống giáo dục quốc dân ban hành kèm theo Thông tư số 27/2011/TT-BGDĐT ngày 27/06/2011 của Bộ Giáo dục và Đào tạo;</p>
+    <p class="indent">- Quy định của Nhà trường về công tác quản lý KTX;</p>
+
+    <p>Hôm nay, ngày ... tháng ... năm 202..., tại Phòng Quản lý Ký túc xá, chúng tôi gồm:</p>
+
+    <h2>BÊN A: ĐẠI DIỆN PHÒNG QUẢN LÝ KÝ TÚC XÁ</h2>
+    <p>Ông/Bà: <span class="underline">{{quanLy.ten_quan_ly}}</span></p>
+    <p>Chức vụ: <span class="underline">Quản lý KTX</span></p>
+    <p>Số CCCD: <span class="underline">{{quanLy.cccd}}</span></p>
+    <p>Điện thoại: <span class="underline">{{quanLy.sdt}}</span></p>
+
+    <h2>BÊN B: SINH VIÊN</h2>
+    <p>Họ và tên: <span class="underline">{{sinhVien.ho_ten}}</span></p>
+    <p>MSSV: <span class="underline">{{sinhVien.mssv}}</span></p>
+    <p>Ngày sinh: <span class="underline">{{sinhVien.ngay_sinh|date:"d/m/Y"}}</span></p>
+    <p>Giới tính: <span class="underline">{% if sinhVien.gioi_tinh %}Nam{% else %}Nữ{% endif %}</span></p>
+    <p>Số CCCD: <span class="underline">{{sinhVien.cccd}}</span></p>
+    <p>Quê quán: <span class="underline">{{sinhVien.que_quan}}</span></p>
+
+    <p>Hai bên cùng thỏa thuận ký kết Hợp đồng nội trú KTX với các điều khoản sau:</p>
+
+    <h2>ĐIỀU 1: NỘI DUNG HỢP ĐỒNG</h2>
+    <p>Bên A đồng ý cho Bên B ở nội trú tại Ký túc xá sinh viên với các thông tin sau:</p>
+    <p>- Phòng ở: <span class="underline">{{phong.ma_phong}}</span></p>
+    <p>- Dãy nhà: <span class="underline">{{phong.day_phong.ten_day_phong}}</span></p>
+    <p>- Loại phòng: <span class="underline">{{phong.loai_phong.ten_loai_phong}}</span></p>
+    <p>- Thời gian ở: Từ ngày <span class="underline">{{hopDong.ngay_vao|date:"d/m/Y"}}</span> đến ngày <span class="underline">{{hopDong.ngay_ra|date:"d/m/Y"}}</span></p>
+
+    <h2>ĐIỀU 2: PHÍ NỘI TRÚ VÀ PHƯƠNG THỨC THANH TOÁN</h2>
+    <p>1. Phí nội trú: <span class="underline">{{phong.gia|floatformat:0}}</span> VNĐ/tháng/sinh viên</p>
+    <p>2. Phương thức thanh toán: Bên B phải đóng phí nội trú vào đầu mỗi tháng, chậm nhất là ngày 10 của tháng đó. Việc thanh toán có thể thực hiện trực tiếp tại Phòng Quản lý KTX hoặc chuyển khoản theo thông tin do Bên A cung cấp.</p>
+    <p>3. Đối với tiền điện, nước: Tính theo chỉ số tiêu thụ thực tế, với đơn giá điện là 3.000 VNĐ/kWh và nước là 25.000 VNĐ/m³. Thanh toán cùng với tiền phòng hàng tháng.</p>
+
+    <h2>ĐIỀU 3: QUYỀN VÀ NGHĨA VỤ CỦA BÊN A</h2>
+    <p>1. Quyền của Bên A:</p>
+    <p class="indent">- Yêu cầu Bên B thanh toán đầy đủ, đúng hạn các khoản phí theo quy định;</p>
+    <p class="indent">- Chấm dứt hợp đồng trước thời hạn nếu Bên B vi phạm nghiêm trọng nội quy KTX;</p>
+    <p class="indent">- Kiểm tra, giám sát việc sử dụng phòng ở và các trang thiết bị của Bên B.</p>
+    
+    <p>2. Nghĩa vụ của Bên A:</p>
+    <p class="indent">- Đảm bảo cơ sở vật chất, trang thiết bị phòng ở hoạt động tốt;</p>
+    <p class="indent">- Cung cấp các dịch vụ tiện ích theo quy định;</p>
+    <p class="indent">- Bảo đảm an ninh, trật tự, vệ sinh môi trường trong khu vực KTX;</p>
+    <p class="indent">- Giải quyết kịp thời các yêu cầu hợp lý của Bên B.</p>
+
+    <h2>ĐIỀU 4: QUYỀN VÀ NGHĨA VỤ CỦA BÊN B</h2>
+    <p>1. Quyền của Bên B:</p>
+    <p class="indent">- Được sử dụng các trang thiết bị, tiện nghi trong phòng ở và các khu vực công cộng theo quy định;</p>
+    <p class="indent">- Được đề xuất, kiến nghị với Bên A về các vấn đề liên quan đến sinh hoạt trong KTX;</p>
+    <p class="indent">- Được Bên A bảo đảm an ninh, trật tự và các điều kiện sinh hoạt cơ bản.</p>
+    
+    <p>2. Nghĩa vụ của Bên B:</p>
+    <p class="indent">- Thanh toán đầy đủ, đúng hạn các khoản phí;</p>
+    <p class="indent">- Chấp hành nghiêm chỉnh nội quy, quy định của KTX;</p>
+    <p class="indent">- Bảo quản tài sản trong phòng ở và khu vực công cộng; bồi thường thiệt hại nếu làm hư hỏng, mất mát;</p>
+    <p class="indent">- Giữ gìn vệ sinh phòng ở và khu vực xung quanh;</p>
+    <p class="indent">- Tham gia đầy đủ các hoạt động của KTX khi được yêu cầu.</p>
+
+    <h2>ĐIỀU 5: CHẤM DỨT HỢP ĐỒNG</h2>
+    <p>1. Hợp đồng chấm dứt trong các trường hợp sau:</p>
+    <p class="indent">- Hai bên thỏa thuận chấm dứt hợp đồng;</p>
+    <p class="indent">- Bên B vi phạm nghiêm trọng nội quy KTX;</p>
+    <p class="indent">- Bên B không còn là sinh viên của trường;</p>
+    <p class="indent">- Hết thời hạn hợp đồng.</p>
+    
+    <p>2. Khi chấm dứt hợp đồng, Bên B phải bàn giao phòng ở và các trang thiết bị theo đúng hiện trạng ban đầu (trừ hao mòn tự nhiên) và thanh toán đầy đủ các khoản phí còn nợ (nếu có).</p>
+
+    <h2>ĐIỀU 6: ĐIỀU KHOẢN CHUNG</h2>
+    <p>1. Hợp đồng này có hiệu lực kể từ ngày ký.</p>
+    <p>2. Mọi thay đổi, bổ sung nội dung hợp đồng phải được sự đồng ý của cả hai bên và lập thành văn bản.</p>
+    <p>3. Trong quá trình thực hiện hợp đồng, nếu có vướng mắc, hai bên sẽ cùng bàn bạc giải quyết trên tinh thần hợp tác. Trường hợp không thỏa thuận được, hai bên thống nhất đưa vụ việc ra cơ quan có thẩm quyền giải quyết theo quy định của pháp luật.</p>
+    <p>4. Hợp đồng được lập thành 02 bản có giá trị pháp lý như nhau, mỗi bên giữ 01 bản.</p>
+
+    <div class="signature">
+        <div class="signature-left">
+            <p><b>BÊN B</b></p>
+            <p><i>(Ký và ghi rõ họ tên)</i></p>
+            <div class="signature-space"></div>
+            <p>{{sinhVien.ho_ten}}</p>
+        </div>
+        <div class="signature-right">
+            <p><b>BÊN A</b></p>
+            <p><i>(Ký, đóng dấu và ghi rõ họ tên)</i></p>
+            <div class="signature-space"></div>
+            <p>{{quanLy.ten_quan_ly}}</p>
+        </div>
+    </div>
+</body>
+</html>

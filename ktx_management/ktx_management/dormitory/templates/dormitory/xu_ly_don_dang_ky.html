@@ -1,19 +1,17 @@
 {% extends 'base.html' %}
-{% block title %}Xử lý đơn đăng ký - Quản lý KTX{% endblock %}
+
+{% block title %}Xử lý đơn đăng ký{% endblock %}
+
 {% block content %}
-<div class="container">
-    <h2 class="mb-4">Xử lý đơn đăng ký</h2>
-    
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Xử lý đơn đăng ký</h2>
     <div class="row">
         <div class="col-md-8">
             <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">Thông tin đơn đăng ký</h5>
-                </div>
                 <div class="card-body">
                     <table class="table">
                         <tr>
-                            <th style="width: 30%;">Mã đơn:</th>
+                            <th>Mã đơn:</th>
                             <td>{{ don.ma_don }}</td>
                         </tr>
                         <tr>
@@ -48,73 +46,20 @@
                 </div>
             </div>
         </div>
-        
         <div class="col-md-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Xử lý đơn</h5>
+            <form method="POST">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="trang_thai" class="form-label">Trạng thái</label>
+                    <select class="form-select" id="trang_thai" name="trang_thai">
+                        <option value="Chờ xử lý" {% if don.trang_thai == 'Chờ xử lý' %}selected{% endif %}>Chờ xử lý</option>
+                        <option value="Đã duyệt" {% if don.trang_thai == 'Đã duyệt' %}selected{% endif %}>Đã duyệt</option>
+                        <option value="Từ chối" {% if don.trang_thai == 'Từ chối' %}selected{% endif %}>Từ chối</option>
+                    </select>
                 </div>
-                <div class="card-body">
-                    <form method="POST">
-                        {% csrf_token %}
-                        <div class="mb-3">
-                            <label for="trang_thai" class="form-label">Trạng thái</label>
-                            <select class="form-select" id="trang_thai" name="trang_thai" required>
-                                <option value="" selected disabled>Chọn trạng thái</option>
-                                <option value="Đã duyệt">Duyệt đơn</option>
-                                <option value="Từ chối">Từ chối</option>
-                            </select>
-                        </div>
-                        
-                        <div id="phong_info" style="display: none;">
-                            <div class="mb-3">
-                                <label for="ma_phong" class="form-label">Phòng</label>
-                                <select class="form-select" id="ma_phong" name="ma_phong">
-                                    <option value="" selected disabled>Chọn phòng</option>
-                                    {% for phong in phong_list %}
-                                    <option value="{{ phong.ma_phong }}">{{ phong.ma_phong }} - Còn trống {{ phong.loai_phong.so_luong|sub:phong.so_luong_sv }} chỗ</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="so_giuong" class="form-label">Số giường</label>
-                                <select class="form-select" id="so_giuong" name="so_giuong">
-                                    <option value="" selected disabled>Chọn số giường</option>
-                                    {% for i in "12345678"|make_list %}
-                                    <option value="{{ i }}">Giường {{ i }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="ghi_chu" class="form-label">Ghi chú</label>
-                            <textarea class="form-control" id="ghi_chu" name="ghi_chu" rows="3"></textarea>
-                        </div>
-                        
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary">Xác nhận</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
+                <button type="submit" class="btn btn-primary">Cập nhật</button>
+            </form>
         </div>
     </div>
 </div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const trangThaiSelect = document.getElementById('trang_thai');
-        const phongInfo = document.getElementById('phong_info');
-        
-        trangThaiSelect.addEventListener('change', function() {
-            if (this.value === 'Đã duyệt') {
-                phongInfo.style.display = 'block';
-            } else {
-                phongInfo.style.display = 'none';
-            }
-        });
-    });
-</script>
 {% endblock %}

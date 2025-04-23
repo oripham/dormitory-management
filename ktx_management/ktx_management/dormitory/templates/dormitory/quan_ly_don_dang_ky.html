@@ -5,7 +5,25 @@
 {% block content %}
 <div class="container">
     <h2 class="mb-4">Quản lý đơn đăng ký</h2>
-    
+    <div class="mb-4">
+        <form method="get" class="row g-3 align-items-center">
+            <div class="col-auto">
+                <label for="trang_thai" class="form-label">Lọc theo trạng thái:</label>
+            </div>
+            <div class="col-auto">
+                <select name="trang_thai" id="trang_thai" class="form-select">
+                    <option value="" {% if not trang_thai %}selected{% endif %}>Tất cả</option>
+                    <option value="Chờ duyệt" {% if trang_thai == 'Chờ duyệt' %}selected{% endif %}>Chờ duyệt</option>
+                    <option value="Đã duyệt" {% if trang_thai == 'Đã duyệt' %}selected{% endif %}>Đã duyệt</option>
+                    <option value="Từ chối" {% if trang_thai == 'Từ chối' %}selected{% endif %}>Từ chối</option>
+                    <option value="Đã hủy" {% if trang_thai == 'Đã hủy' %}selected{% endif %}>Đã hủy</option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary">Lọc</button>
+            </div>
+        </form>
+    </div>
     <div class="card">
         <div class="card-body">
             <div class="table-responsive">
@@ -32,7 +50,7 @@
                                 <td>{{ don.loai_phong }}</td>
                                 <td>{{ don.day_phong }}</td>
                                 <td>
-                                    {% if don.trang_thai == 'Chờ xử lý' %}
+                                    {% if don.trang_thai == 'Chờ duyệt' %}
                                         <span class="badge bg-warning text-dark">{{ don.trang_thai }}</span>
                                     {% elif don.trang_thai == 'Đã duyệt' %}
                                         <span class="badge bg-success">{{ don.trang_thai }}</span>
@@ -43,7 +61,7 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    {% if don.trang_thai == 'Chờ xử lý' %}
+                                    {% if don.trang_thai == 'Chờ duyệt' %}
                                         <a href="{% url 'xu_ly_don_dang_ky' ma_don=don.ma_don %}" class="btn btn-sm btn-primary">Xử lý</a>
                                     {% else %}
                                         <a href="{% url 'xu_ly_don_dang_ky' ma_don=don.ma_don %}" class="btn btn-sm btn-outline-secondary">Xem</a>

@@ -19,6 +19,15 @@
         .navbar-brand, .nav-link {
             color: blue !important;
         }
+
+        .navbar .nav-link{
+            color: white !important; /* Đổi màu chữ thành trắng */
+        }
+        .navbar .dropdown-item:hover {
+            background-color: #e6f7ff;
+            color: #4285f4; /* Màu chữ khi hover */
+        }
+
         .sidebar {
             background-color: #fff;
             border-right: 1px solid #ddd;
@@ -96,7 +105,7 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
         <div class="container">
-            <a class="navbar-brand" href="{% url 'home' %}">
+            <a class="navbar-brand" href="{% url 'home' %}" style="color: white !important;">
                 <i class="fas fa-building"></i> Quản lý KTX
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -110,11 +119,11 @@
                                 <i class="fas fa-tachometer-alt"></i> Dashboard
                             </a>
                         </li>
-                        <li class="nav-item dropdown">
+                        <li class="nav-item dropdown" >
                             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
                                 <i class="fas fa-user"></i> {{ user.username }}
                             </a>
-                            <ul class="dropdown-menu dropdown-menu-end">
+                            <ul class="dropdown-menu dropdown-menu-end" style="color: blue !important;">
                                 <li><a class="dropdown-item" href="{% url 'profile' %}">Thông tin cá nhân</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="{% url 'doi-mat-khau' %}">Đổi mật khẩu</a></li>
@@ -174,6 +183,20 @@
                                         <i class="fas fa-file-invoice-dollar"></i> Quản lý hóa đơn
                                     </a>
                                 </li>
+                                <li class="nav-item">
+                                    <a class="nav-link {% if '/quan-ly-vi-pham/' in request.path %}active{% endif %}" href="{% url 'quan_ly_vi_pham' %}">
+                                        <i class="fas fa-exclamation-triangle"></i> Quản lý vi phạm
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link {% if '/quan-ly-dien-nuoc/' in request.path %}active{% endif %}" href="{% url 'quan_ly_dien_nuoc' %}">
+                                        <i class="fas fa-bolt"></i> Quản lý điện nước
+                                    </a>
+                                <li class="nav-item">
+                                    <a class="nav-link {% if '/quan-ly-hop-dong/' in request.path %}active{% endif %}" href="{% url 'quan_ly_hop_dong' %}">
+                                        <i class="fas fa-handshake"></i> Quản lý hợp đồng
+                                    </a>
+                                </li>
                             {% elif role == 'student' %}
                                 <li class="nav-item">
                                     <a class="nav-link {% if request.path == '/dashboard/' %}active{% endif %}" href="{% url 'dashboard' %}">
@@ -191,10 +214,16 @@
                                     </a>
                                 </li>
                                 <li class="nav-item">
+                                    <a class="nav-link {% if '/ghi-so-dien-nuoc/' in request.path %}active{% endif %}" href="{% url 'ghi_so_dien_nuoc_sinh_vien' %}">
+                                        <i class="fas fa-bolt"></i> Ghi số điện nước
+                                    </a>
+                                </li>
+                                <li class="nav-item">
                                     <a class="nav-link {% if '/xem-hoa-don/' in request.path %}active{% endif %}" href="{% url 'xem_hoa_don' %}">
                                         <i class="fas fa-file-invoice-dollar"></i> Xem hóa đơn
                                     </a>
                                 </li>
+                                
                             {% endif %}
                         </ul>
                     </div>

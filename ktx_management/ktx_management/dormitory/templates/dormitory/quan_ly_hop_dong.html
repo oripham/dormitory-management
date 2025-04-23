@@ -1,0 +1,43 @@
+<!-- filepath: d:\PTTKHT\ktx_management\ktx_management\dormitory\templates\dormitory\quan_ly_hop_dong.html -->
+{% extends 'base.html' %}
+
+{% block title %}Quản lý Hợp đồng{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Quản lý Hợp đồng</h2>
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead class="table-primary text-center">
+                <tr>
+                    <th>Mã hợp đồng</th>
+                    <th>Sinh viên</th>
+                    <th>Phòng</th>
+                    <th>Ngày vào</th>
+                    <th>Ngày ra</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for hop_dong in hop_dong_list %}
+                <tr>
+                    <td class="text-center">{{ hop_dong.ma_hop_dong }}</td>
+                    <td>{{ hop_dong.mssv.ho_ten }} ({{ hop_dong.mssv.mssv }})</td>
+                    <td class="text-center">{{ hop_dong.ma_phong.ma_phong }}</td>
+                    <td class="text-center">{{ hop_dong.ngay_vao|date:"d/m/Y" }}</td>
+                    <td class="text-center">{{ hop_dong.ngay_ra|date:"d/m/Y" }}</td>
+                    <td class="text-center">
+                        <a href="{% url 'hien_thi_hop_dong' hop_dong.ma_hop_dong %}" class="btn btn-warning btn-sm">Xem</a>
+                        <a href="{% url 'xuat_pdf_hop_dong' hop_dong.ma_hop_dong %}" class="btn btn-export btn-sm" style="background-color: aqua">Xuất</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center">Không có hợp đồng nào.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

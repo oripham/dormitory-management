@@ -61,3 +61,4 @@ class ChiSoDienNuocForm(forms.ModelForm):
             'chi_so_dien_moi': 'Chỉ số điện mới',
             'chi_so_nuoc_moi': 'Chỉ số nước mới',
         }
+

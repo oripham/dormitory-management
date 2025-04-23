@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+
+{% block title %}Chi tiết hóa đơn: {{ hoa_don.ma_hoa_don }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h3>Chi tiết hóa đơn</h3>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <h5>Thông tin cơ bản</h5>
+                    <table class="table table-bordered">
+                        <tr>
+                            <th>Mã hóa đơn:</th>
+                            <td>{{ hoa_don.ma_hoa_don }}</td>
+                        </tr>
+                        <tr>
+                            <th>Loại hóa đơn:</th>
+                            <td>
+                                {% if hoa_don.loai_hoa_don == 'Điện nước' %}
+                                    Điện nước
+                                {% elif hoa_don.loai_hoa_don == 'Tiền phòng' %}
+                                    Tiền phòng
+                                {% else %}
+                                    {{ hoa_don.loai_hoa_don }}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Tháng:</th>
+                            <td>{{ hoa_don.thang }}/{{ hoa_don.ngay_thanh_toan.year|default:"" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Số tiền:</th>
+                            <td>{{ hoa_don.so_tien|floatformat:0 }} VNĐ</td>
+                        </tr>
+                        <tr>
+                            <th>Trạng thái:</th>
+                            <td>
+                                {% if hoa_don.ngay_thanh_toan %}
+                                    <span class="badge bg-success">Đã thanh toán</span>
+                                    <br>Ngày: {{ hoa_don.ngay_thanh_toan|date:"d/m/Y" }}
+                                {% else %}
+                                    <span class="badge bg-danger">Chưa thanh toán</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h5>Thông tin phòng và sinh viên</h5>
+                    <table class="table table-bordered">
+                        <tr>
+                            <th>Mã phòng:</th>
+                            <td>{{ phong.ma_phong }}</td>
+                        </tr>
+                        <tr>
+                            <th>Dãy phòng:</th>
+                            <td>{{ phong.day_phong.ten_day_phong }}</td>
+                        </tr>
+                        <tr>
+                            <th>MSSV:</th>
+                            <td>{{ sinh_vien.mssv }}</td>
+                        </tr>
+                        <tr>
+                            <th>Họ tên sinh viên:</th>
+                            <td>{{ sinh_vien.ho_ten }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            {% if chi_so_dien_nuoc and hoa_don.loai_hoa_don == 'dien_nuoc' %}
+            <div class="row">
+                <div class="col-12">
+                    <h5>Chi tiết điện nước</h5>
+                    <table class="table table-bordered">
+                        <thead class="table-secondary">
+                            <tr>
+                                <th>Mục</th>
+                                <th>Chỉ số cũ</th>
+                                <th>Chỉ số mới</th>
+                                <th>Tiêu thụ</th>
+                                <th>Đơn giá</th>
+                                <th>Thành tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Điện (kWh)</td>
+                                <td>{{ chi_so_dien_nuoc.chi_so_dien_cu }}</td>
+                                <td>{{ chi_so_dien_nuoc.chi_so_dien_moi }}</td>
+                                <td>{{ chi_so_dien_nuoc.tieu_thu_dien }}</td>
+                                <td>3,000 VNĐ</td>
+                                <td>{{ chi_so_dien_nuoc.tien_dien|floatformat:0 }} VNĐ</td>
+                            </tr>
+                            <tr>
+                                <td>Nước (m³)</td>
+                                <td>{{ chi_so_dien_nuoc.chi_so_nuoc_cu }}</td>
+                                <td>{{ chi_so_dien_nuoc.chi_so_nuoc_moi }}</td>
+                                <td>{{ chi_so_dien_nuoc.tieu_thu_nuoc }}</td>
+                                <td>25,000 VNĐ</td>
+                                <td>{{ chi_so_dien_nuoc.tien_nuoc|floatformat:0 }} VNĐ</td>
+                            </tr>
+                            <tr class="table-warning">
+                                <td colspan="5" class="text-end"><strong>Tổng cộng:</strong></td>
+                                <td><strong>{{ chi_so_dien_nuoc.thanh_tien|floatformat:0 }} VNĐ</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    {% if chi_so_dien_nuoc.ghi_chu %}
+                    <div class="alert alert-info">
+                        <strong>Ghi chú:</strong> {{ chi_so_dien_nuoc.ghi_chu }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="row mt-3">
+                <div class="col-12">
+                    {% if request.user.taikhoan.role == 'student'%}
+                    <a href="{% url 'danh_sach_hoa_don' %}" class="btn btn-secondary">Quay lại</a>
+                    {% if not hoa_don.ngay_thanh_toan %}
+                        <a href="{% url 'thanh_toan_hoa_don' hoa_don.ma_hoa_don %}" class="btn btn-success">Thanh toán</a>
+                    {% endif %}
+                    {% elif request.user.taikhoan.role == 'manager' %}
+                        <a href="{% url 'chinh_sua_hoa_don' hoa_don.ma_hoa_don %}" class="btn btn-primary">Chỉnh sửa</a>
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                            Xóa hóa đơn
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+{% if request.user.taikhoan.role == 'quan_ly' %}
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Xác nhận xóa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Bạn có chắc chắn muốn xóa hóa đơn {{ hoa_don.ma_hoa_don }} không?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <form action="{% url 'xoa_hoa_don' hoa_don.ma_hoa_don %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Xóa</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

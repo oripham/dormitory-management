@@ -121,33 +121,29 @@
                 <tbody>
                     {% for log in lich_su_dien_nuoc %}
                     <tr>
-                        <td>{{ log.ma_phong.ma_phong }}</td>
-                        <td>{{ log.ma_phong.day_phong.ten_day_phong }}</td>
-                        <td>{{ log.thang }}/{{ log.nam }}</td>
+                        <td>{{ log.chi_so.ma_phong.ma_phong }}</td>
+                        <td>{{ log.chi_so.ma_phong.day_phong.ten_day_phong }}</td>
+                        <td>{{ log.chi_so.thang }}/{{ log.chi_so.nam }}</td>
                         <td>{{ log.tieu_thu_dien }}</td>
                         <td>{{ log.tieu_thu_nuoc }}</td>
                         <td>{{ log.tien_dien|floatformat:0 }}</td>
                         <td>{{ log.tien_nuoc|floatformat:0 }}</td>
                         <td>{{ log.thanh_tien|floatformat:0 }}</td>
                         <td>
-                            {% if log.hoa_don %}
-                                {% if log.hoa_don.ngay_thanh_toan %}
-                                    <span class="badge bg-success">Đã thanh toán</span>
-                                {% else %}
-                                    <span class="badge bg-warning">Chưa thanh toán</span>
-                                {% endif %}
-                            {% else %}
-                                <span class="badge bg-danger">Chưa tạo hóa đơn</span>
+                            {% if log.chi_so.hoa_don.ngay_thanh_toan %}
+                                <span class="badge bg-warning">Đã thanh toán</span>
+                            {% elif log.chi_so.hoa_don %}
+                                <span class="badge bg-danger">Chưa thanh toán</span>
                             {% endif %}
                         </td>
                         <td>
-                            {% if log.hoa_don and not log.hoa_don.ngay_thanh_toan %}
-                                <a href="{% url 'xu_ly_hoa_don' log.hoa_don.ma_hoa_don %}" class="btn btn-sm btn-primary">
-                                    <i class="fas fa-money-bill"></i> Thanh toán
-                                </a>
-                            {% elif not log.hoa_don %}
-                                <a href="{% url 'tao_hoa_don_dien_nuoc' log.id %}" class="btn btn-sm btn-secondary">
+                            {% if not log.chi_so.hoa_don %}
+                                <a href="{% url 'tao_hoa_don' log.chi_so.id %}" class="btn btn-sm btn-secondary">
                                     <i class="fas fa-file-invoice"></i> Tạo hóa đơn
+                                </a>
+                            {% else %}
+                                <a href="{% url 'chi_tiet_hoa_don' log.chi_so.hoa_don.ma_hoa_don %}" class="btn btn-sm btn-info">
+                                    <i class="fas fa-eye"></i> Xem hóa đơn
                                 </a>
                             {% endif %}
                         </td>
@@ -164,25 +160,25 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Auto-submit form when filter changes
-    document.getElementById('thang').addEventListener('change', function() {
-        document.getElementById('filterForm').submit();
-    });
-    document.getElementById('nam').addEventListener('change', function() {
-        document.getElementById('filterForm').submit();
-    });
-    document.getElementById('day_phong').addEventListener('change', function() {
-        document.getElementById('filterForm').submit();
-    });
-    document.getElementById('trang_thai').addEventListener('change', function() {
-        document.getElementById('filterForm').submit();
-    });
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-submit form when any filter changes
+        const filterElements = ['thang', 'nam', 'day_phong', 'trang_thai'];
+        filterElements.forEach(function(elementId) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.addEventListener('change', function() {
+                    document.getElementById('filterForm').submit();
+                });
+            }
+        });
     
-    // Export to Excel functionality
-    document.getElementById('btnExport').addEventListener('click', function() {
-        window.location.href = window.location.pathname + window.location.search + '&export=excel';
+        // Export to Excel functionality
+        const btnExport = document.getElementById('btnExport');
+        if (btnExport) {
+            btnExport.addEventListener('click', function() {
+                window.location.href = window.location.pathname + window.location.search + '&export=excel';
+            });
+        }
     });
-});
 </script>
 {% endblock %}

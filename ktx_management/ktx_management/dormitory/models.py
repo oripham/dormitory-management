@@ -175,3 +175,4 @@ class ChiSoDienNuoc(models.Model):
     
     def __str__(self):
         return f"Điện nước phòng {self.ma_phong} - {self.thang}/{self.nam}"
+

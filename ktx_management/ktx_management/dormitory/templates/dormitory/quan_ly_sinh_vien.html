@@ -7,45 +7,101 @@
     <h1 class="text-center mb-4">Quản lý sinh viên</h1>
     <div class="table-responsive">
         <table class="table table-bordered table-hover table-striped">
-            <thead class="table-primary text-center">
-                <tr>
-                    <th>MSSV</th>
-                    <th>Họ tên</th>
-                    <th>CCCD</th>
-                    <th>Ngày sinh</th>
-                    <th>Giới tính</th>
-                    <th>Quê quán</th>
-                    <th>Trạng thái</th>
-                    <th>Phòng</th>
-                    <th>Giường</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for sinh_vien in sinh_vien_list %}
-                <tr>
-                    <td class="text-center">{{ sinh_vien.mssv }}</td>
-                    <td class="text-center">{{ sinh_vien.ho_ten }}</td>
-                    <td class="text-center">{{ sinh_vien.cccd }}</td>
-                    <td class="text-center">{{ sinh_vien.ngay_sinh|date:"d/m/Y" }}</td>
-                    <td class="text-center">
-                        {% if sinh_vien.gioi_tinh %}
-                            Nam
-                        {% else %}
-                            Nữ
-                        {% endif %}
-                    </td>
-                    <td class="text-center">{{ sinh_vien.que_quan }}</td>
-                    <td class="text-center">{{ sinh_vien.trang_thai }}</td>
-                    <td class="text-center">{{ sinh_vien.so_phong }}</td>
-                    <td class="text-center">{{ sinh_vien.so_giuong }}</td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="9" class="text-center">Không có sinh viên nào.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
+            <div class="container mt-5">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover table-striped">
+                        <thead class="table-primary text-center">
+                            <tr>
+                                <th>MSSV</th>
+                                <th>Họ tên</th>
+                                <th>CCCD</th>
+                                <th>Ngày sinh</th>
+                                <th>Giới tính</th>
+                                <th>Quê quán</th>
+                                <th>Trạng thái</th>
+                                <th>Phòng</th>
+                                <th>Giường</th>
+                                <th>Chuyển phòng</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sinh_vien in sinh_vien_list %}
+                            <tr>
+                                <td class="text-center">{{ sinh_vien.mssv }}</td>
+                                <td class="text-center">{{ sinh_vien.ho_ten }}</td>
+                                <td class="text-center">{{ sinh_vien.cccd }}</td>
+                                <td class="text-center">{{ sinh_vien.ngay_sinh|date:"d/m/Y" }}</td>
+                                <td class="text-center">
+                                    {% if sinh_vien.gioi_tinh %}
+                                        Nam
+                                    {% else %}
+                                        Nữ
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">{{ sinh_vien.que_quan }}</td>
+                                <td class="text-center">{{ sinh_vien.trang_thai }}</td>
+                                <td class="text-center">{{ sinh_vien.so_phong }}</td>
+                                <td class="text-center">{{ sinh_vien.so_giuong }}</td>
+                                <td class="text-center">
+                                    <select class="form-select form-select-sm chuyen-phong-select" data-id="{{ sinh_vien.mssv }}">
+                                        {% for phong in phong_list %}
+                                        <option value="{{ phong.ma_phong }}" {% if phong.ma_phong == sinh_vien.so_phong %}selected{% endif %}>
+                                            {{ phong.ma_phong }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <button class="btn btn-primary btn-sm btn-cap-nhat-phong" data-id="{{ sinh_vien.mssv }}">Cập nhật</button>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="10" class="text-center">Không có sinh viên nào.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </table>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.btn-cap-nhat-phong').forEach(function (button) {
+            button.addEventListener('click', function () {
+                const mssv = this.getAttribute('data-id');
+                const selectElement = document.querySelector(`.chuyen-phong-select[data-id="${mssv}"]`);
+                const phongMoi = selectElement.value;
+
+                fetch(`/cap-nhat-chuyen-phong/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}',
+                    },
+                    body: JSON.stringify({
+                        mssv: mssv,
+                        phong_moi: phongMoi,
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Chuyển phòng thành công!');
+                        location.reload(); // Tải lại trang để cập nhật dữ liệu
+                    } else {
+                        alert('Chuyển phòng thất bại: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Lỗi:', error);
+                    alert('Đã xảy ra lỗi khi chuyển phòng.');
+                });
+            });
+        });
+    });
+</script>
 {% endblock %}

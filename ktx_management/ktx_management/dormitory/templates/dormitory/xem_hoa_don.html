@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    <title>Xem hóa đơn</title>
+{% endblock %}
+
+
+{% block navbar %}
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="#">KTX Management</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item active">
+                    <a class="nav-link" href="{% url 'home' %}">Trang chủ</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'xem_hoa_don' %}">Xem hóa đơn</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h3 class="text-center">Danh sách hóa đơn</h3>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Mã hóa đơn</th>
+                <th>Ngày tạo</th>
+                <th>Số tiền</th>
+                <th>Trạng thái</th>
+                <th>Hành động</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for hoa_don in hoa_don_list %}
+            <tr>
+                <td>{{ hoa_don.ma_hoa_don }}</td>
+                <td>{{ hoa_don.ngay_tao|date:"d/m/Y" }}</td>
+                <td>{{ hoa_don.so_tien|floatformat:2 }}</td>
+                <td>
+                    {% if hoa_don.ngay_thanh_toan %}
+                        Đã thanh toán
+                    {% else %}
+                        Chưa thanh toán
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'chi_tiet_hoa_don' hoa_don.ma_hoa_don %}" class="btn btn-info btn-sm">Chi tiết</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="text-center">Không có hóa đơn nào.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

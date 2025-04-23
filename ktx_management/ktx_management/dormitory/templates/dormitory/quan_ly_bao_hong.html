@@ -26,13 +26,22 @@
                     <td class="text-center">
                         {% if bao_hong.trang_thai == 'Chờ xử lý' %}
                             <span class="badge bg-warning text-dark">Chờ xử lý</span>
+                        {% elif bao_hong.trang_thai == 'Đang xử lý' %}
+                            <span class="badge bg-primary">Đang xử lý</span>
                         {% elif bao_hong.trang_thai == 'Đã xử lý' %}
                             <span class="badge bg-success">Đã xử lý</span>
+                        {% elif bao_hong.trang_thai == 'Hủy' %}
+                            <span class="badge bg-danger">Hủy</span>
                         {% endif %}
                     </td>
                     <td class="text-center">{{ bao_hong.ma_phong }}</td>
                     <td class="text-center">
-                        <a href="{% url 'xu_ly_bao_hong' bao_hong.ma_bh %}" class="btn btn-primary btn-sm">Xử lý</a>
+                        {% if bao_hong.trang_thai == 'Chờ xử lý' %}
+                            <button class="btn btn-primary btn-sm btn-xu-ly" data-id="{{ bao_hong.ma_bh }}">Xử lý</button>
+                        {% elif bao_hong.trang_thai == 'Đang xử lý' %}
+                            <button class="btn btn-success btn-sm btn-hoan-thanh" data-id="{{ bao_hong.ma_bh }}">Hoàn thành</button>
+                            <button class="btn btn-danger btn-sm btn-huy" data-id="{{ bao_hong.ma_bh }}">Hủy</button>
+                        {% endif %}
                     </td>
                 </tr>
                 {% empty %}
@@ -44,4 +53,62 @@
         </table>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Xử lý nút "Xử lý"
+        document.querySelectorAll('.btn-xu-ly').forEach(function (button) {
+            button.addEventListener('click', function () {
+                const maBh = this.getAttribute('data-id');
+                capNhatTrangThai(maBh, 'Đang xử lý');
+            });
+        });
+
+        // Xử lý nút "Hoàn thành"
+        document.querySelectorAll('.btn-hoan-thanh').forEach(function (button) {
+            button.addEventListener('click', function () {
+                const maBh = this.getAttribute('data-id');
+                capNhatTrangThai(maBh, 'Đã xử lý');
+            });
+        });
+
+        // Xử lý nút "Hủy"
+        document.querySelectorAll('.btn-huy').forEach(function (button) {
+            button.addEventListener('click', function () {
+                const maBh = this.getAttribute('data-id');
+                capNhatTrangThai(maBh, 'Hủy');
+            });
+        });
+
+        // Hàm cập nhật trạng thái
+        function capNhatTrangThai(maBh, trangThaiMoi) {
+            fetch(`/cap-nhat-trang-thai-bao-hong/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}',
+                },
+                body: JSON.stringify({
+                    ma_bh: maBh,
+                    trang_thai: trangThaiMoi,
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Cập nhật trạng thái thành công!');
+                    location.reload(); // Tải lại trang để cập nhật dữ liệu
+                } else {
+                    alert('Cập nhật thất bại: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Lỗi:', error);
+                alert('Đã xảy ra lỗi khi cập nhật trạng thái.');
+            });
+        }
+    });
+</script>
 {% endblock %}

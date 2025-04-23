@@ -1,0 +1,25 @@
+<!-- filepath: d:\PTTKHT\ktx_management\ktx_management\dormitory\templates\dormitory\chinh_sua_hoa_don.html -->
+{% extends 'base.html' %}
+
+{% block title %}Chỉnh sửa hóa đơn{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h3>Chỉnh sửa hóa đơn</h3>
+    <form method="post">
+        {% csrf_token %}
+        <fieldset>
+            <legend>Thông tin hóa đơn</legend>
+            {{ hoa_don_form.as_p }}
+        </fieldset>
+        {% if chi_so_form %}
+        <fieldset>
+            <legend>Chỉ số điện nước</legend>
+            {{ chi_so_form.as_p }}
+        </fieldset>
+        {% endif %}
+        <button type="submit" class="btn btn-primary">Lưu</button>
+        <a href="{% url 'quan_ly_hoa_don' %}" class="btn btn-secondary">Hủy</a>
+    </form>
+</div>
+{% endblock %}

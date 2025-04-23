@@ -7,7 +7,10 @@ from django.contrib.auth import update_session_auth_hash
 from django.db.models import Count, Sum, F
 from django.utils import timezone
 import datetime, calendar
-
+from django.views.decorators.csrf import csrf_exempt
+from xhtml2pdf import pisa
+from django.http import HttpResponse
+from django.template.loader import get_template
 from .models import (
     TaiKhoan, DayPhong, LoaiPhong, Phong, SinhVien, QuanLy, 
     DonDangKy, ViPham, HopDong, BaoHong, HoaDon, TaiSan, ChiTietTaiSan, ChiSoDienNuoc
@@ -16,7 +19,8 @@ from .forms import (
     UserRegisterForm, SinhVienForm, QuanLyForm, DonDangKyForm, 
     BaoHongForm, HoaDonForm, ViPhamForm, ChiSoDienNuocForm
 )
-
+from django.http import JsonResponse
+import json
 @login_required
 def home(request):
     try:
@@ -124,18 +128,19 @@ def dashboard(request):
         
         try:
             # Kiểm tra hợp đồng
-            hop_dong = HopDong.objects.filter(mssv=student).order_by('-ngay_vao').first()
+            hop_dong = HopDong.objects.filter(mssv=sinh_vien).order_by('-ngay_vao').first()
             # Kiểm tra hóa đơn chưa thanh toán
-            hoa_don_chua_tt = HoaDon.objects.filter(mssv=student, ngay_thanh_toan=None).count()
+            hoa_don_chua_tt = HoaDon.objects.filter(mssv=sinh_vien, ngay_thanh_toan=None).count()
             # Kiểm tra vi phạm
-            vi_pham = ViPham.objects.filter(mssv=student).count()
+            vi_pham = ViPham.objects.filter(mssv=sinh_vien).count()
             
             context = {
                 'sinh_vien': sinh_vien,
                 'hop_dong': hop_dong,
                 'hoa_don_chua_tt': hoa_don_chua_tt,
                 'vi_pham': vi_pham,
-                'role': 'student'
+                'role': 'student',
+                'so_phong': sinh_vien.so_phong,
             }
         except Exception as e:
             context = {
@@ -155,6 +160,11 @@ def dang_ky_phong(request):
         return redirect('dashboard')
     
     student = SinhVien.objects.get(tai_khoan=tai_khoan)
+    
+    # Kiểm tra xem sinh viên đã có phòng ở hay chưa
+    if student.so_phong and student.so_phong != 'Chưa có':
+        messages.info(request, 'Bạn đã có phòng ở. Không thể đăng ký thêm.')
+        return redirect('dashboard')
     
     # Kiểm tra xem sinh viên đã có đơn đăng ký chưa xử lý hay chưa
     don_dang_ky = DonDangKy.objects.filter(mssv=student, trang_thai='Chờ xử lý').first()
@@ -184,7 +194,8 @@ def dang_ky_phong(request):
     return render(request, 'dormitory/dang_ky_phong.html', {
         'form': form,
         'loai_phong_list': loai_phong_list,
-        'day_phong_list': day_phong_list
+        'day_phong_list': day_phong_list,
+        'role': tai_khoan.role
     })
 
 @login_required
@@ -228,108 +239,74 @@ def bao_hong(request):
     return render(request, 'dormitory/bao_hong.html', {
         'form': form,
         'bao_hong_list': bao_hong_list,
-        'phong': phong
-    })
-
-@login_required
-def quan_ly_don_dang_ky(request):
-    tai_khoan = TaiKhoan.objects.get(user=request.user)
-    
-    if tai_khoan.role != 'manager':
-        messages.error(request, 'Bạn không có quyền truy cập chức năng này!')
-        return redirect('dashboard')
-    
-    # Lấy danh sách đơn đăng ký
-    don_dang_ky_list = DonDangKy.objects.all().order_by('-ngay_dang_ky')
-    
-    return render(request, 'dormitory/quan_ly_don_dang_ky.html', {
-        'don_dang_ky_list': don_dang_ky_list,
+        'so_phong': phong.ma_phong,
         'role': tai_khoan.role
     })
 
 @login_required
+def quan_ly_don_dang_ky(request):
+    # Lấy trạng thái từ query parameters
+    trang_thai = request.GET.get('trang_thai', '')
+
+    # Lấy danh sách đơn đăng ký
+    don_dang_ky_list = DonDangKy.objects.all()
+
+    # Lọc theo trạng thái nếu có
+    if trang_thai:
+        don_dang_ky_list = don_dang_ky_list.filter(trang_thai=trang_thai)
+
+    # Sắp xếp theo ngày đăng ký (ưu tiên ai đăng ký trước)
+    don_dang_ky_list = don_dang_ky_list.order_by('ngay_dang_ky')
+
+    return render(request, 'dormitory/quan_ly_don_dang_ky.html', {
+        'don_dang_ky_list': don_dang_ky_list,
+        'trang_thai': trang_thai,
+        'role': TaiKhoan.objects.get(user=request.user).role
+    })
+
+@login_required
 def xu_ly_don_dang_ky(request, ma_don):
-    tai_khoan = TaiKhoan.objects.get(user=request.user)
-    
-    if tai_khoan.role != 'manager':
-        messages.error(request, 'Bạn không có quyền truy cập chức năng này!')
-        return redirect('dashboard')
-    
+    # Lấy thông tin đơn đăng ký
     don = get_object_or_404(DonDangKy, ma_don=ma_don)
-    
-    if request.method == 'POST':
-        trang_thai = request.POST.get('trang_thai')
-        ma_phong = request.POST.get('ma_phong')
-        so_giuong = request.POST.get('so_giuong')
-        
-        if trang_thai == 'Đã duyệt':
-            if not ma_phong or not so_giuong:
-                messages.error(request, 'Vui lòng chọn phòng và giường!')
-                return redirect('xu_ly_don_dang_ky', ma_don=ma_don)
-            
-            try:
-                phong = Phong.objects.get(ma_phong=ma_phong)
-                # Kiểm tra số lượng sinh viên trong phòng
-                if phong.so_luong_sv >= phong.loai_phong.so_luong:
-                    messages.error(request, 'Phòng đã đầy!')
-                    return redirect('xu_ly_don_dang_ky', ma_don=ma_don)
-                
-                # Cập nhật thông tin sinh viên
-                student = don.mssv
-                student.so_phong = ma_phong
-                student.so_giuong = so_giuong
-                student.trang_thai = 'Đã có phòng'
-                student.save()
-                
-                # Cập nhật số lượng sinh viên trong phòng
-                phong.so_luong_sv += 1
-                phong.save()
-                
-                # Tạo hợp đồng
-                ngay_vao = datetime.date.today()
-                ngay_ra = ngay_vao.replace(year=ngay_vao.year + 1)
-                
-                hop_dong = HopDong.objects.create(
-                    ma_hop_dong=f"HD{student.mssv}{ngay_vao.strftime('%Y%m%d')}",
-                    ngay_vao=ngay_vao,
-                    ngay_ra=ngay_ra,
-                    ma_phong=phong,
-                    mssv=student
-                )
-                
-                # Tạo hóa đơn phòng cho tháng hiện tại
-                thang_hien_tai = datetime.date.today().month
-                HoaDon.objects.create(
-                    ma_hoa_don=f"HD{student.mssv}{thang_hien_tai}{datetime.date.today().year}",
-                    so_tien=phong.gia,
-                    loai_hoa_don='Tiền phòng',
-                    ngay_thanh_toan=None,
-                    mssv=student,
-                    thang=thang_hien_tai,
-                    ma_phong=phong
-                )
-                
-            except Phong.DoesNotExist:
-                messages.error(request, 'Không tìm thấy phòng này!')
-                return redirect('xu_ly_don_dang_ky', ma_don=ma_don)
-        
-        # Cập nhật trạng thái đơn
-        don.trang_thai = trang_thai
+    tai_khoan = TaiKhoan.objects.get(user=request.user)
+
+    # Kiểm tra số chỗ trống trong dãy phòng
+    phong_list = Phong.objects.filter(day_phong=don.day_phong, loai_phong=don.loai_phong)
+    so_cho_trong = phong_list.aggregate(
+        tong_cho_trong=Sum(F('loai_phong__so_luong') - F('so_luong_sv'))
+    )['tong_cho_trong']
+
+    # Nếu không còn chỗ trống, tự động từ chối đơn
+    if so_cho_trong is None or so_cho_trong <= 0:
+        don.trang_thai = 'Từ chối'
         don.save()
-        
-        messages.success(request, f'Đã {trang_thai.lower()} đơn đăng ký!')
+        messages.error(request, 'Loại phòng thuộc dãy này đã hết chỗ. Đơn đăng ký đã bị từ chối.')
         return redirect('quan_ly_don_dang_ky')
-    
-    # Lấy danh sách phòng có thể đăng ký
-    phong_list = Phong.objects.filter(
-        so_luong_sv__lt=F('loai_phong__so_luong'),
-        loai_phong__ma_loai_phong=don.loai_phong,
-        day_phong__ma_day_phong=don.day_phong
-    )
-    
+
+    if request.method == 'POST':
+        # Lấy trạng thái từ form
+        trang_thai = request.POST.get('trang_thai')
+
+        if trang_thai == 'Đã duyệt':
+            # Cập nhật trạng thái đơn
+            don.trang_thai = trang_thai
+            don.save()
+
+            # Gửi thông báo thành công
+            messages.success(request, f'Đã {trang_thai.lower()} đơn đăng ký!')
+            return redirect('quan_ly_don_dang_ky')
+
+        elif trang_thai == 'Từ chối':
+            # Cập nhật trạng thái đơn
+            don.trang_thai = trang_thai
+            don.save()
+            # Gửi thông báo từ chối
+            messages.success(request, f'Đã {trang_thai.lower()} đơn đăng ký!')
+            return redirect('quan_ly_don_dang_ky')
+
     return render(request, 'dormitory/xu_ly_don_dang_ky.html', {
         'don': don,
-        'phong_list': phong_list
+        'role': tai_khoan.role
     })
 
 @login_required
@@ -376,12 +353,14 @@ def quan_ly_sinh_vien(request):
         messages.error(request, 'Bạn không có quyền truy cập chức năng này!')
         return redirect('dashboard')
     
-    # Lấy danh sách sinh viên
-    student_list = SinhVien.objects.all().order_by('mssv')
-    
+    # Lấy danh sách sinh viên chỉ có trạng thái "Đang ở"
+    sinh_vien_list = SinhVien.objects.filter(trang_thai='Đang ở').order_by('mssv')
+    phong_list = Phong.objects.all()  # Lấy danh sách phòng để hiển thị trong dropdown
+
     return render(request, 'dormitory/quan_ly_sinh_vien.html', {
-        'student_list': student_list,
-        'role': tai_khoan.role
+        'sinh_vien_list': sinh_vien_list,
+        'phong_list': phong_list,
+        'role': tai_khoan.role,
     })
 
 @login_required
@@ -425,19 +404,35 @@ def xu_ly_bao_hong(request, ma_bh):
 
 @login_required
 def quan_ly_hoa_don(request):
+    # Kiểm tra quyền truy cập
     tai_khoan = TaiKhoan.objects.get(user=request.user)
     
     if tai_khoan.role != 'manager':
         messages.error(request, 'Bạn không có quyền truy cập chức năng này!')
         return redirect('dashboard')
     
-    # Lấy danh sách hóa đơn
-    hoa_don_list = HoaDon.objects.all().order_by('-thang')
+    # Lấy giá trị lọc từ query parameters
+    loai_hoa_don = request.GET.get('loai_hoa_don', '')
     
-    return render(request, 'dormitory/quan_ly_hoa_don.html', {
+    # Khởi tạo query set
+    hoa_don_list = HoaDon.objects.all()
+    
+    # Lọc theo loại hóa đơn nếu có
+    if loai_hoa_don:
+        hoa_don_list = hoa_don_list.filter(loai_hoa_don=loai_hoa_don)
+    
+    # Sắp xếp kết quả
+    hoa_don_list = hoa_don_list.order_by('-thang')
+    
+    # Chuẩn bị context cho template
+    context = {
         'hoa_don_list': hoa_don_list,
-        'role': tai_khoan.role
-    })
+        'role': tai_khoan.role,
+        'loai_hoa_don': loai_hoa_don,  # Truyền giá trị lọc vào context
+        'current_year': timezone.now().year
+    }
+    
+    return render(request, 'dormitory/quan_ly_hoa_don.html', context)
 
 @login_required
 def xem_hoa_don(request):
@@ -453,7 +448,8 @@ def xem_hoa_don(request):
     hoa_don_list = HoaDon.objects.filter(mssv=student).order_by('-thang')
     
     return render(request, 'dormitory/xem_hoa_don.html', {
-        'hoa_don_list': hoa_don_list
+        'hoa_don_list': hoa_don_list,
+        'role': tai_khoan.role
     })
 
 @login_required
@@ -494,7 +490,8 @@ def quan_ly_vi_pham(request):
     student_list = SinhVien.objects.all()
     
     return render(request, 'dormitory/quan_ly_vi_pham.html', {
-        'student_list': student_list
+        'sinh_vien_list': student_list,
+        'role': tai_khoan.role
     })
 
 @login_required
@@ -524,24 +521,11 @@ def them_vi_pham(request, mssv):
     
     return render(request, 'dormitory/them_vi_pham.html', {
         'form': form,
-        'student': student,
-        'vi_pham_list': vi_pham_list
+        'sinh_vien': student,
+        'vi_pham_list': vi_pham_list,
+        'role': tai_khoan.role
     })
 
-@login_required
-def quan_ly_dien_nuoc(request):
-    tai_khoan = TaiKhoan.objects.get(user=request.user)
-    
-    if tai_khoan.role != 'manager':
-        messages.error(request, 'Bạn không có quyền truy cập chức năng này!')
-        return redirect('dashboard')
-    
-    # Lấy danh sách phòng
-    phong_list = Phong.objects.all()
-    
-    return render(request, 'dormitory/quan_ly_dien_nuoc.html', {
-        'phong_list': phong_list
-    })
 
 @login_required
 def quan_ly_dien_nuoc(request):
@@ -554,18 +538,28 @@ def quan_ly_dien_nuoc(request):
     phong_list = Phong.objects.all().order_by('day_phong__ten_day_phong', 'ma_phong')
     
     return render(request, 'dormitory/quan_ly_dien_nuoc.html', {
-        'phong_list': phong_list
+        'phong_list': phong_list,
+        'role': tai_khoan.role
     })
 
 @login_required
 def ghi_so_dien_nuoc(request, ma_phong):
     tai_khoan = TaiKhoan.objects.get(user=request.user)
     
-    if tai_khoan.role != 'manager':
+    # Lấy thông tin phòng từ mã phòng
+    phong = get_object_or_404(Phong, ma_phong=ma_phong)
+    
+    # Kiểm tra quyền truy cập
+    if tai_khoan.role == 'student':
+        # Nếu là sinh viên, chỉ được ghi chỉ số cho phòng của mình
+        sinh_vien = SinhVien.objects.get(tai_khoan=tai_khoan)
+        if sinh_vien.so_phong != ma_phong:
+            messages.error(request, 'Bạn không có quyền ghi chỉ số cho phòng này!')
+            return redirect('dashboard')
+    elif tai_khoan.role != 'manager':
+        # Nếu không phải manager hoặc student, từ chối truy cập
         messages.error(request, 'Bạn không có quyền truy cập chức năng này!')
         return redirect('dashboard')
-    
-    phong = get_object_or_404(Phong, ma_phong=ma_phong)
     
     # Lấy ngày hiện tại
     ngay_hien_tai = datetime.date.today()
@@ -598,13 +592,7 @@ def ghi_so_dien_nuoc(request, ma_phong):
         chi_so_ton_tai = ChiSoDienNuoc.objects.filter(ma_phong=phong, thang=thang, nam=nam).first()
         
         if chi_so_ton_tai:
-            # Cập nhật chỉ số cũ
-            chi_so_ton_tai.chi_so_dien_moi = chi_so_dien_moi
-            chi_so_ton_tai.chi_so_nuoc_moi = chi_so_nuoc_moi
-            chi_so_ton_tai.ngay_ghi = ngay_ghi
-            chi_so_ton_tai.ghi_chu = ghi_chu
-            chi_so_ton_tai.save()
-            messages.success(request, f'Cập nhật chỉ số điện nước tháng {thang}/{nam} thành công!')
+            messages.warning(request, f'Chỉ số điện nước tháng {thang}/{nam} đã được ghi trước đó!')
         else:
             # Tạo chỉ số mới
             ChiSoDienNuoc.objects.create(
@@ -634,7 +622,90 @@ def ghi_so_dien_nuoc(request, ma_phong):
         'chi_so_dien_cu': chi_so_dien_cu,
         'chi_so_nuoc_cu': chi_so_nuoc_cu,
         'ngay_ghi': ngay_hien_tai,
-        'lich_su': lich_su
+        'lich_su': lich_su,
+        'role': tai_khoan.role
+    })
+
+@login_required
+def ghi_so_dien_nuoc_sinh_vien(request):
+    tai_khoan = TaiKhoan.objects.get(user=request.user)
+    
+    # Kiểm tra quyền truy cập
+    if tai_khoan.role != 'student':
+        messages.error(request, 'Chức năng này chỉ dành cho sinh viên!')
+        return redirect('dashboard')
+    
+    # Lấy thông tin sinh viên và phòng
+    sinh_vien = get_object_or_404(SinhVien, tai_khoan=tai_khoan)
+    if not sinh_vien.so_phong:
+        messages.error(request, 'Bạn chưa được phân phòng!')
+        return redirect('dashboard')
+    
+    phong = get_object_or_404(Phong, ma_phong=sinh_vien.so_phong)
+    
+    # Lấy ngày hiện tại
+    ngay_hien_tai = datetime.date.today()
+    thang_hien_tai = ngay_hien_tai.month
+    nam_hien_tai = ngay_hien_tai.year
+    
+    # Tạo danh sách tháng và năm cho form
+    thang_options = range(1, 13)
+    nam_options = range(nam_hien_tai - 2, nam_hien_tai + 1)
+    
+    # Lấy chỉ số điện nước cũ nhất
+    chi_so_cu = ChiSoDienNuoc.objects.filter(ma_phong=phong).order_by('-nam', '-thang').first()
+    
+    chi_so_dien_cu = 0
+    chi_so_nuoc_cu = 0
+    
+    if chi_so_cu:
+        chi_so_dien_cu = chi_so_cu.chi_so_dien_moi
+        chi_so_nuoc_cu = chi_so_cu.chi_so_nuoc_moi
+    
+    if request.method == 'POST':
+        thang = int(request.POST.get('thang'))
+        nam = int(request.POST.get('nam'))
+        chi_so_dien_moi = int(request.POST.get('chi_so_dien_moi'))
+        chi_so_nuoc_moi = int(request.POST.get('chi_so_nuoc_moi'))
+        ngay_ghi = request.POST.get('ngay_ghi')
+        ghi_chu = request.POST.get('ghi_chu', '')
+        
+        # Kiểm tra xem đã có chỉ số cho tháng này chưa
+        chi_so_ton_tai = ChiSoDienNuoc.objects.filter(ma_phong=phong, thang=thang, nam=nam).first()
+        
+        if chi_so_ton_tai:
+            messages.warning(request, f'Chỉ số điện nước tháng {thang}/{nam} đã được ghi trước đó!')
+        else:
+            # Tạo chỉ số mới
+            ChiSoDienNuoc.objects.create(
+                ma_phong=phong,
+                thang=thang,
+                nam=nam,
+                chi_so_dien_cu=chi_so_dien_cu,
+                chi_so_dien_moi=chi_so_dien_moi,
+                chi_so_nuoc_cu=chi_so_nuoc_cu,
+                chi_so_nuoc_moi=chi_so_nuoc_moi,
+                ngay_ghi=ngay_ghi,
+                ghi_chu=ghi_chu
+            )
+            messages.success(request, f'Ghi chỉ số điện nước tháng {thang}/{nam} thành công!')
+            
+        return redirect('ghi_so_dien_nuoc_sinh_vien')
+    
+    # Lấy lịch sử ghi chỉ số
+    lich_su = ChiSoDienNuoc.objects.filter(ma_phong=phong).order_by('-nam', '-thang')
+    
+    return render(request, 'dormitory/ghi_so_dien_nuoc.html', {
+        'phong': phong,
+        'thang_options': thang_options,
+        'nam_options': nam_options,
+        'thang_hien_tai': thang_hien_tai,
+        'nam_hien_tai': nam_hien_tai,
+        'chi_so_dien_cu': chi_so_dien_cu,
+        'chi_so_nuoc_cu': chi_so_nuoc_cu,
+        'ngay_ghi': ngay_hien_tai,
+        'lich_su': lich_su,
+        'role': tai_khoan.role
     })
 
 @login_required
@@ -645,51 +716,129 @@ def bao_cao_dien_nuoc(request):
         messages.error(request, 'Bạn không có quyền truy cập chức năng này!')
         return redirect('dashboard')
     
-    # Lấy thông tin tháng năm hiện tại
+    # Lấy thông tin tháng và năm hiện tại
     thang_hien_tai = timezone.now().month
     nam_hien_tai = timezone.now().year
     
-    # Mặc định là tháng hiện tại
-    thang = request.GET.get('thang', thang_hien_tai)
-    nam = request.GET.get('nam', nam_hien_tai)
+    # Lọc dữ liệu theo tháng, năm, dãy phòng, trạng thái
+    thang = request.GET.get('thang', None)
+    nam = request.GET.get('nam', None)
+    day_phong_selected = request.GET.get('day_phong', None)
+    trang_thai_selected = request.GET.get('trang_thai', None)
     
-    try:
-        thang = int(thang)
-        nam = int(nam)
-    except ValueError:
-        thang = thang_hien_tai
-        nam = nam_hien_tai
+    filters = {}
+    if thang:
+        filters['thang'] = thang
+    if nam:
+        filters['nam'] = nam
+    if day_phong_selected:
+        filters['ma_phong__day_phong__ma_day_phong'] = day_phong_selected
+    if trang_thai_selected == 'chua_thanh_toan':
+        filters['hoa_don__ngay_thanh_toan__isnull'] = True  # Hóa đơn chưa được thanh toán
+    elif trang_thai_selected == 'da_thanh_toan':
+        filters['hoa_don__ngay_thanh_toan__isnull'] = False  # Hóa đơn đã được thanh toán
     
-    # Lấy dữ liệu điện nước theo tháng năm
-    chi_so_list = ChiSoDienNuoc.objects.filter(thang=thang, nam=nam)
+    # Lấy danh sách chỉ số điện nước
+    chi_so_list = ChiSoDienNuoc.objects.filter(**filters).select_related('hoa_don', 'ma_phong', 'ma_phong__day_phong')
     
-    # Tổng số điện nước
-    tong_dien = chi_so_list.aggregate(Sum('tong_dien'))['tong_dien__sum'] or 0
-    tong_nuoc = chi_so_list.aggregate(Sum('tong_nuoc'))['tong_nuoc__sum'] or 0
+    # Tính toán các giá trị cần thiết
+    chi_so_data = []
+    tong_dien_tieu_thu = 0
+    tong_nuoc_tieu_thu = 0
+    tong_tien_dien = 0
+    tong_tien_nuoc = 0
     
-    # Gia điện nước
-    gia_dien = 3000  # VND/kWh
-    gia_nuoc = 25000  # VND/m3
-    
-    # Tổng tiền
-    tong_tien_dien = tong_dien * gia_dien
-    tong_tien_nuoc = tong_nuoc * gia_nuoc
-    tong_tien = tong_tien_dien + tong_tien_nuoc
+    for chi_so in chi_so_list:
+        tieu_thu_dien = chi_so.chi_so_dien_moi - chi_so.chi_so_dien_cu
+        tieu_thu_nuoc = chi_so.chi_so_nuoc_moi - chi_so.chi_so_nuoc_cu
+        tien_dien = tieu_thu_dien * 3000  # Giá điện: 3000 VND/kWh
+        tien_nuoc = tieu_thu_nuoc * 25000  # Giá nước: 25000 VND/m³
+        thanh_tien = tien_dien + tien_nuoc
+        
+        tong_dien_tieu_thu += tieu_thu_dien
+        tong_nuoc_tieu_thu += tieu_thu_nuoc
+        tong_tien_dien += tien_dien
+        tong_tien_nuoc += tien_nuoc
+        
+        chi_so_data.append({
+            'chi_so': chi_so,
+            'tieu_thu_dien': tieu_thu_dien,
+            'tieu_thu_nuoc': tieu_thu_nuoc,
+            'tien_dien': tien_dien,
+            'tien_nuoc': tien_nuoc,
+            'thanh_tien': thanh_tien,
+        })
     
     # Danh sách các tháng và năm
     thang_list = list(range(1, 13))
     nam_list = list(range(nam_hien_tai - 2, nam_hien_tai + 1))
+    day_phong_list = DayPhong.objects.all()
     
     return render(request, 'dormitory/bao_cao_dien_nuoc.html', {
-        'chi_so_list': chi_so_list,
-        'thang': thang,
-        'nam': nam,
-        'thang_list': thang_list,
-        'nam_list': nam_list,
-        'tong_dien': tong_dien,
-        'tong_nuoc': tong_nuoc,
-        'gia_dien': gia_dien,
-        'gia_nuoc': gia_nuoc,
+        'lich_su_dien_nuoc': chi_so_data,
+        'thang_selected': thang,
+        'nam_selected': nam,
+        'day_phong_selected': day_phong_selected,
+        'trang_thai_selected': trang_thai_selected,
+        'thang_options': thang_list,
+        'nam_options': nam_list,
+        'day_phong_list': day_phong_list,
+        'tong_dien_tieu_thu': tong_dien_tieu_thu,
+        'tong_nuoc_tieu_thu': tong_nuoc_tieu_thu,
+        'tong_tien_dien': tong_tien_dien,
+        'tong_tien_nuoc': tong_tien_nuoc,
+        'role': tai_khoan.role
+    })
+
+@login_required
+def tao_hoa_don(request, chi_so_id):
+    tai_khoan = TaiKhoan.objects.get(user=request.user)
+    
+    if tai_khoan.role != 'manager':
+        messages.error(request, 'Bạn không có quyền truy cập chức năng này!')
+        return redirect('dashboard')
+    
+    # Lấy thông tin chỉ số điện nước
+    chi_so = get_object_or_404(ChiSoDienNuoc, id=chi_so_id)
+    
+    # Lấy danh sách sinh viên trong phòng
+    sinh_vien_list = SinhVien.objects.filter(so_phong=chi_so.ma_phong.ma_phong)
+    
+    # Tính toán các giá trị cần thiết
+    tieu_thu_dien = chi_so.chi_so_dien_moi - chi_so.chi_so_dien_cu
+    tieu_thu_nuoc = chi_so.chi_so_nuoc_moi - chi_so.chi_so_nuoc_cu
+    tong_tien_dien = tieu_thu_dien * 3000
+    tong_tien_nuoc = tieu_thu_nuoc * 25000
+    tong_tien = tong_tien_dien + tong_tien_nuoc
+    
+    if request.method == 'POST':
+        # Lấy sinh viên đại diện từ form
+        sinh_vien_dai_dien_mssv = request.POST.get('sinh_vien_dai_dien')
+        sinh_vien_dai_dien = get_object_or_404(SinhVien, mssv=sinh_vien_dai_dien_mssv)
+        
+        # Tạo hóa đơn
+        hoa_don = HoaDon.objects.create(
+            ma_hoa_don=f"HD{timezone.now().strftime('%Y%m%d%H%M%S')}",
+            so_tien=tong_tien,
+            loai_hoa_don='Điện nước',
+            ma_phong=chi_so.ma_phong,
+            thang=chi_so.thang,
+            mssv=sinh_vien_dai_dien,  # Lưu sinh viên đại diện
+            ngay_thanh_toan=None  # Chưa thanh toán
+        )
+        
+        # Liên kết hóa đơn với chỉ số điện nước
+        chi_so.hoa_don = hoa_don
+        chi_so.save()
+        
+        messages.success(request, f'Đã tạo hóa đơn cho phòng {chi_so.ma_phong.ma_phong}.')
+        return redirect('bao_cao_dien_nuoc')
+    
+    return render(request, 'dormitory/tao_hoa_don.html', {
+        'chi_so': chi_so,
+        'sinh_vien_list': sinh_vien_list,
+        'tieu_thu_dien': tieu_thu_dien,
+        'tieu_thu_nuoc': tieu_thu_nuoc,
         'tong_tien_dien': tong_tien_dien,
         'tong_tien_nuoc': tong_tien_nuoc,
         'tong_tien': tong_tien
@@ -709,3 +858,227 @@ def doi_mat_khau(request):
     else:
         form = PasswordChangeForm(user=request.user)
     return render(request, 'dormitory/doi_mat_khau.html', {'form': form})
+
+@login_required
+def chi_tiet_hoa_don(request, ma_hoa_don):
+    """
+    Hiển thị chi tiết của một hóa đơn dựa trên mã hóa đơn.
+    """
+    # Lấy hóa đơn từ mã hoặc trả về 404 nếu không tìm thấy
+    hoa_don = get_object_or_404(HoaDon, ma_hoa_don=ma_hoa_don)
+    
+    # Kiểm tra quyền truy cập
+    # Nếu là sinh viên, chỉ được xem hóa đơn của mình
+    if hasattr(request.user, 'taikhoan') and request.user.taikhoan.role == 'sinh_vien':
+        if hasattr(request.user.taikhoan, 'sinhvien') and request.user.taikhoan.sinhvien.mssv != hoa_don.mssv.mssv:
+            return render(request, '403.html', {'message': 'Bạn không có quyền xem hóa đơn này'}, status=403)
+    
+    # Nếu là hóa đơn điện nước, lấy thêm thông tin chi tiết
+    chi_so_dien_nuoc = None
+    if hoa_don.loai_hoa_don == 'Điện nước':
+        try:
+            chi_so_dien_nuoc = ChiSoDienNuoc.objects.get(hoa_don=hoa_don)
+        except ChiSoDienNuoc.DoesNotExist:
+            pass
+    
+    context = {
+        'hoa_don': hoa_don,
+        'chi_so_dien_nuoc': chi_so_dien_nuoc,
+        'sinh_vien': hoa_don.mssv,
+        'phong': hoa_don.ma_phong,
+        'role': TaiKhoan.objects.get(user=request.user).role,
+    }
+    
+    return render(request, 'dormitory/chi_tiet_hoa_don.html', context)
+
+@login_required
+def chinh_sua_hoa_don(request, ma_hoa_don):
+    hoa_don = get_object_or_404(HoaDon, ma_hoa_don=ma_hoa_don)
+
+    # Khởi tạo biến chi_so_dien_nuoc mặc định là None
+    chi_so_dien_nuoc = None
+
+    # Nếu hóa đơn là loại "Điện nước", lấy thông tin chỉ số điện nước
+    if hoa_don.loai_hoa_don == 'Điện nước':
+        chi_so_dien_nuoc = ChiSoDienNuoc.objects.filter(hoa_don=hoa_don).first()
+        print(chi_so_dien_nuoc)
+
+    if request.method == 'POST':
+        hoa_don_form = HoaDonForm(request.POST, instance=hoa_don)
+        chi_so_form = ChiSoDienNuocForm(request.POST, instance=chi_so_dien_nuoc) if chi_so_dien_nuoc else None
+
+        if hoa_don_form.is_valid() and (chi_so_form is None or chi_so_form.is_valid()):
+            hoa_don_form.save()
+            if chi_so_form:
+                chi_so_form.save()
+            messages.success(request, 'Hóa đơn đã được cập nhật thành công.')
+            return redirect('quan_ly_hoa_don')
+    else:
+        hoa_don_form = HoaDonForm(instance=hoa_don)
+        chi_so_form = ChiSoDienNuocForm(instance=chi_so_dien_nuoc) if chi_so_dien_nuoc else None
+
+    return render(request, 'dormitory/chinh_sua_hoa_don.html', {
+        'hoa_don_form': hoa_don_form,
+        'chi_so_form': chi_so_form,
+        'role': TaiKhoan.objects.get(user=request.user).role
+    })
+
+@csrf_exempt
+@login_required
+def xoa_hoa_don(request):
+    if request.method == 'POST':
+        try:
+            # Lấy dữ liệu JSON từ body
+            data = json.loads(request.body)
+            ma_hoa_don = data.get('ma_hoa_don')
+            print(f"Yêu cầu xóa hóa đơn: {ma_hoa_don}")
+
+            # Kiểm tra và xóa hóa đơn
+            hoa_don = get_object_or_404(HoaDon, ma_hoa_don=ma_hoa_don)
+            hoa_don.delete()
+            print(f"Đã xóa hóa đơn: {ma_hoa_don}")
+            return JsonResponse({'success': True})
+        except json.JSONDecodeError:
+            print("Dữ liệu JSON không hợp lệ.")
+            return JsonResponse({'success': False, 'error': 'Dữ liệu JSON không hợp lệ.'}, status=400)
+        except Exception as e:
+            print(f"Lỗi: {e}")
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)
+    print("Yêu cầu không phải POST")
+    return JsonResponse({'success': False, 'error': 'Yêu cầu không phải POST'}, status=400)
+
+@login_required
+def quan_ly_hop_dong(request):
+    # Lấy danh sách hợp đồng
+    hop_dong_list = HopDong.objects.all().order_by('-ngay_vao')
+
+    return render(request, 'dormitory/quan_ly_hop_dong.html', {
+        'hop_dong_list': hop_dong_list,
+        'role': TaiKhoan.objects.get(user=request.user).role
+    })
+
+@csrf_exempt
+@login_required
+def cap_nhat_trang_thai_phong(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            ma_phong = data.get('ma_phong')
+            trang_thai = data.get('trang_thai')
+
+            # Kiểm tra trạng thái hợp lệ
+            if trang_thai not in ['Trống', 'Đầy', 'Bảo trì', 'Đang sửa chữa']:
+                return JsonResponse({'success': False, 'error': 'Trạng thái không hợp lệ.'})
+
+            # Cập nhật trạng thái phòng
+            phong = Phong.objects.get(ma_phong=ma_phong)
+            phong.trang_thai = trang_thai
+            phong.save()
+
+            return JsonResponse({'success': True})
+        except Phong.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Phòng không tồn tại.'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+
+    return JsonResponse({'success': False, 'error': 'Phương thức không hợp lệ.'})
+
+@csrf_exempt
+@login_required
+def cap_nhat_chuyen_phong(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            mssv = data.get('mssv')
+            phong_moi = data.get('phong_moi')
+
+            # Kiểm tra sinh viên tồn tại
+            sinh_vien = SinhVien.objects.get(mssv=mssv)
+
+            # Cập nhật phòng mới
+            sinh_vien.so_phong = phong_moi
+            sinh_vien.save()
+
+            return JsonResponse({'success': True})
+        except SinhVien.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Sinh viên không tồn tại.'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+
+    return JsonResponse({'success': False, 'error': 'Phương thức không hợp lệ.'})
+
+@csrf_exempt
+@login_required
+def cap_nhat_trang_thai_bao_hong(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            ma_bh = data.get('ma_bh')
+            trang_thai = data.get('trang_thai')
+
+            # Kiểm tra báo hỏng tồn tại
+            bao_hong = BaoHong.objects.get(ma_bh=ma_bh)
+
+            # Cập nhật trạng thái
+            bao_hong.trang_thai = trang_thai
+            bao_hong.save()
+
+            return JsonResponse({'success': True})
+        except BaoHong.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Báo hỏng không tồn tại.'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+
+    return JsonResponse({'success': False, 'error': 'Phương thức không hợp lệ.'})
+
+def xuat_pdf_hop_dong(request, ma_hop_dong):
+    # Lấy thông tin hợp đồng từ cơ sở dữ liệu
+    hop_dong = get_object_or_404(HopDong, ma_hop_dong=ma_hop_dong)
+
+    # Dữ liệu truyền vào template
+    context = {
+        'hopDong': hop_dong,
+        'sinhVien': hop_dong.mssv,
+        'quanLy': {
+            'ten_quan_ly': 'Nguyễn Văn A',  # Thay bằng thông tin quản lý thực tế
+            'cccd': '123456789012',
+            'sdt': '0987654321',
+        },
+        'phong': hop_dong.ma_phong,
+    }
+
+    # Đường dẫn đến template HTML
+    template_path = 'dormitory/template_hop_dong.html'
+
+    # Render template HTML
+    template = get_template(template_path)
+    html = template.render(context)
+
+    # Tạo file PDF
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="hop_dong_{ma_hop_dong}.pdf"'
+    pisa_status = pisa.CreatePDF(html, dest=response)
+
+    # Kiểm tra lỗi
+    if pisa_status.err:
+        return HttpResponse('Có lỗi xảy ra khi tạo PDF', status=500)
+    return response
+
+from django.shortcuts import render, get_object_or_404
+
+def hien_thi_hop_dong(request, ma_hop_dong):
+    # Lấy thông tin hợp đồng từ cơ sở dữ liệu
+    hop_dong = get_object_or_404(HopDong, ma_hop_dong=ma_hop_dong)
+
+    # Truyền dữ liệu vào template
+    context = {
+        'hopDong': hop_dong,
+        'sinhVien': hop_dong.mssv,
+        'quanLy': {
+            'ten_quan_ly': 'Nguyễn Văn A',  # Thay bằng thông tin quản lý thực tế
+            'cccd': '123456789012',
+            'sdt': '0987654321',
+        },
+        'phong': hop_dong.ma_phong,
+    }
+    return render(request, 'dormitory/template_hop_dong.html', context)
