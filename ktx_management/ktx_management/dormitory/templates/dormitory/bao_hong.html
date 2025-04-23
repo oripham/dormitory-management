@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title %}Báo hỏng - Quản lý KTX{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Báo hỏng</h2>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Form báo hỏng</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Phòng</label>
+                            <input type="text" class="form-control" value="{{ phong.ma_phong }}" readonly>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Mô tả hỏng hóc</label>
+                            <textarea name="mo_ta" class="form-control" rows="3" required placeholder="Mô tả chi tiết về hỏng hóc..."></textarea>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Gửi báo hỏng</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Lịch sử báo hỏng</h5>
+                </div>
+                <div class="card-body">
+                    {% if bao_hong_list %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Mã báo hỏng</th>
+                                        <th>Ngày báo</th>
+                                        <th>Mô tả</th>
+                                        <th>Trạng thái</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for bao_hong in bao_hong_list %}
+                                        <tr>
+                                            <td>{{ bao_hong.ma_bh }}</td>
+                                            <td>{{ bao_hong.ngay_bao }}</td>
+                                            <td>{{ bao_hong.mo_ta }}</td>
+                                            <td>
+                                                {% if bao_hong.trang_thai == 'Chờ xử lý' %}
+                                                    <span class="badge bg-warning text-dark">{{ bao_hong.trang_thai }}</span>
+                                                {% elif bao_hong.trang_thai == 'Đang xử lý' %}
+                                                    <span class="badge bg-info">{{ bao_hong.trang_thai }}</span>
+                                                {% elif bao_hong.trang_thai == 'Đã xử lý' %}
+                                                    <span class="badge bg-success">{{ bao_hong.trang_thai }}</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">{{ bao_hong.trang_thai }}</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="mb-0">Không có báo hỏng nào.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Hướng dẫn</h5>
+                </div>
+                <div class="card-body">
+                    <p>Để báo hỏng thiết bị trong phòng ở, vui lòng thực hiện các bước sau:</p>
+                    <ol>
+                        <li>Mô tả chi tiết về tình trạng hỏng hóc</li>
+                        <li>Gửi thông tin báo hỏng</li>
+                        <li>Chờ ban quản lý xử lý</li>
+                        <li>Kiểm tra trạng thái xử lý</li>
+                    </ol>
+                    <p class="mb-0 text-muted"><i class="fas fa-info-circle"></i> Lưu ý: Thời gian xử lý từ 1-7 ngày tùy mức độ hỏng hóc.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

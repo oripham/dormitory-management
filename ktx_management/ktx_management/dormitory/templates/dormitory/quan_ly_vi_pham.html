@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block title %}Quản lý vi phạm - Quản lý KTX{% endblock %}
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Quản lý vi phạm</h2>
+    
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Danh sách sinh viên</h5>
+                <div>
+                    <input type="text" id="searchInput" class="form-control" placeholder="Tìm kiếm...">
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <table class="table table-striped table-hover" id="sinhVienTable">
+                <thead>
+                    <tr>
+                        <th>MSSV</th>
+                        <th>Họ tên</th>
+                        <th>Phòng</th>
+                        <th>Số vi phạm</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sv in sinh_vien_list %}
+                    <tr>
+                        <td>{{ sv.mssv }}</td>
+                        <td>{{ sv.ho_ten }}</td>
+                        <td>{{ sv.so_phong }}</td>
+                        <td>{{ sv.vipham_set.count }}</td>
+                        <td>
+                            <a href="{% url 'them_vi_pham' sv.mssv %}" class="btn btn-sm btn-primary">
+                                <i class="fas fa-plus"></i> Thêm vi phạm
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const table = document.getElementById('sinhVienTable');
+    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+    
+    searchInput.addEventListener('keyup', function() {
+        const searchText = searchInput.value.toLowerCase();
+        
+        for (let i = 0; i < rows.length; i++) {
+            const mssv = rows[i].getElementsByTagName('td')[0].textContent.toLowerCase();
+            const hoTen = rows[i].getElementsByTagName('td')[1].textContent.toLowerCase();
+            const phong = rows[i].getElementsByTagName('td')[2].textContent.toLowerCase();
+            
+            if (mssv.includes(searchText) || hoTen.includes(searchText) || phong.includes(searchText)) {
+                rows[i].style.display = '';
+            } else {
+                rows[i].style.display = 'none';
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

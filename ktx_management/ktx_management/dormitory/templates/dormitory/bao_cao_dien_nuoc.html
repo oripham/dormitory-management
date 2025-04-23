@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+{% block title %}Báo cáo điện nước - Quản lý KTX{% endblock %}
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Báo cáo điện nước</h2>
+    
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" id="filterForm">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-group mb-3">
+                            <label for="thang">Tháng:</label>
+                            <select class="form-control" id="thang" name="thang">
+                                <option value="">-- Tất cả --</option>
+                                {% for i in thang_options %}
+                                    <option value="{{ i }}" {% if i == thang_selected %}selected{% endif %}>{{ i }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group mb-3">
+                            <label for="nam">Năm:</label>
+                            <select class="form-control" id="nam" name="nam">
+                                <option value="">-- Tất cả --</option>
+                                {% for i in nam_options %}
+                                    <option value="{{ i }}" {% if i == nam_selected %}selected{% endif %}>{{ i }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group mb-3">
+                            <label for="day_phong">Dãy phòng:</label>
+                            <select class="form-control" id="day_phong" name="day_phong">
+                                <option value="">-- Tất cả --</option>
+                                {% for day in day_phong_list %}
+                                    <option value="{{ day.ma_day_phong }}" {% if day.ma_day_phong == day_phong_selected %}selected{% endif %}>{{ day.ten_day_phong }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group mb-3">
+                            <label for="trang_thai">Trạng thái:</label>
+                            <select class="form-control" id="trang_thai" name="trang_thai">
+                                <option value="">-- Tất cả --</option>
+                                <option value="chua_thanh_toan" {% if trang_thai_selected == 'chua_thanh_toan' %}selected{% endif %}>Chưa thanh toán</option>
+                                <option value="da_thanh_toan" {% if trang_thai_selected == 'da_thanh_toan' %}selected{% endif %}>Đã thanh toán</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <button type="submit" class="btn btn-primary">Lọc</button>
+                        <a href="{% url 'bao_cao_dien_nuoc' %}" class="btn btn-secondary">Đặt lại</a>
+                        <button type="button" class="btn btn-success float-end" id="btnExport">Xuất Excel</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Thống kê điện nước - {{ thang_selected|default:'Tất cả tháng' }}/{{ nam_selected|default:'Tất cả năm' }}</h5>
+        </div>
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">Tổng điện tiêu thụ</h5>
+                            <p class="card-text display-6">{{ tong_dien_tieu_thu|floatformat:0 }} kWh</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">Tổng nước tiêu thụ</h5>
+                            <p class="card-text display-6">{{ tong_nuoc_tieu_thu|floatformat:1 }} m³</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning">
+                        <div class="card-body">
+                            <h5 class="card-title">Tổng tiền điện</h5>
+                            <p class="card-text display-6">{{ tong_tien_dien|floatformat:0 }} đ</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info">
+                        <div class="card-body">
+                            <h5 class="card-title">Tổng tiền nước</h5>
+                            <p class="card-text display-6">{{ tong_tien_nuoc|floatformat:0 }} đ</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <table class="table table-striped" id="dienNuocTable">
+                <thead>
+                    <tr>
+                        <th>Mã phòng</th>
+                        <th>Dãy phòng</th>
+                        <th>Tháng/Năm</th>
+                        <th>Tiêu thụ điện (kWh)</th>
+                        <th>Tiêu thụ nước (m³)</th>
+                        <th>Tiền điện (đ)</th>
+                        <th>Tiền nước (đ)</th>
+                        <th>Tổng tiền (đ)</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in lich_su_dien_nuoc %}
+                    <tr>
+                        <td>{{ log.ma_phong.ma_phong }}</td>
+                        <td>{{ log.ma_phong.day_phong.ten_day_phong }}</td>
+                        <td>{{ log.thang }}/{{ log.nam }}</td>
+                        <td>{{ log.tieu_thu_dien }}</td>
+                        <td>{{ log.tieu_thu_nuoc }}</td>
+                        <td>{{ log.tien_dien|floatformat:0 }}</td>
+                        <td>{{ log.tien_nuoc|floatformat:0 }}</td>
+                        <td>{{ log.thanh_tien|floatformat:0 }}</td>
+                        <td>
+                            {% if log.hoa_don %}
+                                {% if log.hoa_don.ngay_thanh_toan %}
+                                    <span class="badge bg-success">Đã thanh toán</span>
+                                {% else %}
+                                    <span class="badge bg-warning">Chưa thanh toán</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge bg-danger">Chưa tạo hóa đơn</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if log.hoa_don and not log.hoa_don.ngay_thanh_toan %}
+                                <a href="{% url 'xu_ly_hoa_don' log.hoa_don.ma_hoa_don %}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-money-bill"></i> Thanh toán
+                                </a>
+                            {% elif not log.hoa_don %}
+                                <a href="{% url 'tao_hoa_don_dien_nuoc' log.id %}" class="btn btn-sm btn-secondary">
+                                    <i class="fas fa-file-invoice"></i> Tạo hóa đơn
+                                </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="10" class="text-center">Không có dữ liệu</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit form when filter changes
+    document.getElementById('thang').addEventListener('change', function() {
+        document.getElementById('filterForm').submit();
+    });
+    document.getElementById('nam').addEventListener('change', function() {
+        document.getElementById('filterForm').submit();
+    });
+    document.getElementById('day_phong').addEventListener('change', function() {
+        document.getElementById('filterForm').submit();
+    });
+    document.getElementById('trang_thai').addEventListener('change', function() {
+        document.getElementById('filterForm').submit();
+    });
+    
+    // Export to Excel functionality
+    document.getElementById('btnExport').addEventListener('click', function() {
+        window.location.href = window.location.pathname + window.location.search + '&export=excel';
+    });
+});
+</script>
+{% endblock %}

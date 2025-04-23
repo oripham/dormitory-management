@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block title %}Đăng xuất - Quản lý KTX{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card mt-5 text-center">
+                <div class="card-body">
+                    <i class="fas fa-check-circle text-success fa-4x mb-3"></i>
+                    <h3>Đăng xuất thành công</h3>
+                    <p class="mb-4">Cảm ơn bạn đã sử dụng hệ thống quản lý KTX!</p>
+                    <a href="{% url 'login' %}" class="btn btn-primary">Đăng nhập lại</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

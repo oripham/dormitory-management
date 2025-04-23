@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% block title %}Quản lý điện nước - Quản lý KTX{% endblock %}
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Quản lý điện nước</h2>
+    
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5>Thống kê điện nước</h5>
+                    <p>Quản lý ghi số điện nước cho các phòng ở KTX.</p>
+                    <a href="{% url 'bao_cao_dien_nuoc' %}" class="btn btn-primary">Xem báo cáo điện nước</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5>Lưu ý</h5>
+                    <ul>
+                        <li>Chỉ số điện nước được ghi nhận vào cuối tháng</li>
+                        <li>Giá điện: 3,000 đ/kWh</li>
+                        <li>Giá nước: 25,000 đ/m³</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Danh sách phòng</h5>
+                <div>
+                    <input type="text" id="searchInput" class="form-control" placeholder="Tìm kiếm phòng...">
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <table class="table table-striped table-hover" id="phongTable">
+                <thead>
+                    <tr>
+                        <th>Mã phòng</th>
+                        <th>Dãy phòng</th>
+                        <th>Loại phòng</th>
+                        <th>Số SV</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for phong in phong_list %}
+                    <tr>
+                        <td>{{ phong.ma_phong }}</td>
+                        <td>{{ phong.day_phong.ten_day_phong }}</td>
+                        <td>{{ phong.loai_phong.ten_loai_phong }}</td>
+                        <td>{{ phong.so_luong_sv }}/{{ phong.loai_phong.so_luong }}</td>
+                        <td>
+                            <a href="{% url 'ghi_so_dien_nuoc' phong.ma_phong %}" class="btn btn-sm btn-primary">
+                                <i class="fas fa-pencil-alt"></i> Ghi số điện nước
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchInput');
+        const table = document.getElementById('phongTable');
+        const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+        
+        searchInput.addEventListener('keyup', function() {
+            const searchText = searchInput.value.toLowerCase();
+            
+            for (let i = 0; i < rows.length; i++) {
+                const maPhong = rows[i].getElementsByTagName('td')[0].textContent.toLowerCase();
+                const dayPhong = rows[i].getElementsByTagName('td')[1].textContent.toLowerCase();
+                
+                if (maPhong.includes(searchText) || dayPhong.includes(searchText)) {
+                    rows[i].style.display = '';
+                } else {
+                    rows[i].style.display = 'none';
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

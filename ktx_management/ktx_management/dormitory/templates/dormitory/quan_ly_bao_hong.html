@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Quản lý báo hỏng{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="text-center mb-4">Quản lý báo hỏng</h1>
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover table-striped">
+            <thead class="table-primary text-center">
+                <tr>
+                    <th>Mã báo hỏng</th>
+                    <th>Mô tả</th>
+                    <th>Ngày báo</th>
+                    <th>Trạng thái</th>
+                    <th>Phòng</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for bao_hong in bao_hong_list %}
+                <tr>
+                    <td class="text-center">{{ bao_hong.ma_bh }}</td>
+                    <td>{{ bao_hong.mo_ta }}</td>
+                    <td class="text-center">{{ bao_hong.ngay_bao|date:"d/m/Y" }}</td>
+                    <td class="text-center">
+                        {% if bao_hong.trang_thai == 'Chờ xử lý' %}
+                            <span class="badge bg-warning text-dark">Chờ xử lý</span>
+                        {% elif bao_hong.trang_thai == 'Đã xử lý' %}
+                            <span class="badge bg-success">Đã xử lý</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">{{ bao_hong.ma_phong }}</td>
+                    <td class="text-center">
+                        <a href="{% url 'xu_ly_bao_hong' bao_hong.ma_bh %}" class="btn btn-primary btn-sm">Xử lý</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center">Không có báo hỏng nào.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}Đăng ký phòng - Quản lý KTX{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Đăng ký phòng</h2>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Form đăng ký</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Loại phòng</label>
+                            <select name="loai_phong" class="form-select" required>
+                                <option value="">-- Chọn loại phòng --</option>
+                                {% for loai in loai_phong_list %}
+                                    <option value="{{ loai.ma_loai_phong }}">{{ loai.ten_loai_phong }} ({{ loai.so_luong }} người)</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Dãy phòng</label>
+                            <select name="day_phong" class="form-select" required>
+                                <option value="">-- Chọn dãy phòng --</option>
+                                {% for day in day_phong_list %}
+                                    <option value="{{ day.ma_day_phong }}">{{ day.ten_day_phong }} ({{ day.doi_tuong }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Đăng ký</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Hướng dẫn</h5>
+                </div>
+                <div class="card-body">
+                    <p>Để đăng ký phòng ở KTX, vui lòng thực hiện các bước sau:</p>
+                    <ol>
+                        <li>Chọn loại phòng phù hợp</li>
+                        <li>Chọn dãy phòng phù hợp với giới tính</li>
+                        <li>Hoàn thành form đăng ký</li>
+                        <li>Chờ ban quản lý duyệt đơn</li>
+                        <li>Kiểm tra kết quả đăng ký</li>
+                    </ol>
+                    <p class="mb-0 text-muted"><i class="fas fa-info-circle"></i> Lưu ý: Thời gian xử lý đơn từ 1-3 ngày làm việc.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

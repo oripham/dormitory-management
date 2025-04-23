@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}Thông tin cá nhân - Quản lý KTX{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <h4 class="mb-0">Thông tin cá nhân</h4>
+        </div>
+        <div class="card-body">
+            {% if role == 'student' %}
+                <div class="row">
+                    <div class="col-md-4 text-center mb-4 mb-md-0">
+                        <h5>{{ user_profile.ho_ten }}</h5>
+                        <p class="text-muted">Sinh viên</p>
+                        <p><span class="badge bg-primary">{{ user_profile.trang_thai }}</span></p>
+                    </div>
+                    <div class="col-md-8">
+                        <table class="table">
+                            <tr>
+                                <th style="width: 30%;">MSSV:</th>
+                                <td>{{ user_profile.mssv }}</td>
+                            </tr>
+                            <tr>
+                                <th>Họ và tên:</th>
+                                <td>{{ user_profile.ho_ten }}</td>
+                            </tr>
+                            <tr>
+                                <th>CCCD:</th>
+                                <td>{{ user_profile.cccd }}</td>
+                            </tr>
+                            <tr>
+                                <th>Ngày sinh:</th>
+                                <td>{{ user_profile.ngay_sinh }}</td>
+                            </tr>
+                            <tr>
+                                <th>Giới tính:</th>
+                                <td>{% if user_profile.gioi_tinh %}Nam{% else %}Nữ{% endif %}</td>
+                            </tr>
+                            <tr>
+                                <th>Quê quán:</th>
+                                <td>{{ user_profile.que_quan }}</td>
+                            </tr>
+                            <tr>
+                                <th>Phòng:</th>
+                                <td>{{ user_profile.so_phong }}</td>
+                            </tr>
+                            <tr>
+                                <th>Giường:</th>
+                                <td>{% if user_profile.so_giuong %}{{ user_profile.so_giuong }}{% else %}Chưa có{% endif %}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            {% elif role == 'manager' %}
+                <div class="row">
+                    <div class="col-md-4 text-center mb-4 mb-md-0">
+                        <h5>{{ user_profile.ten_manager }}</h5>
+                        <p class="text-muted">Quản lý KTX</p>
+                    </div>
+                    <div class="col-md-8">
+                        <table class="table">
+                            <tr>
+                                <th style="width: 30%;">Mã quản lý:</th>
+                                <td>{{ user_profile.ma_manager }}</td>
+                            </tr>
+                            <tr>
+                                <th>Họ và tên:</th>
+                                <td>{{ user_profile.ten_manager }}</td>
+                            </tr>
+                            <tr>
+                                <th>CCCD:</th>
+                                <td>{{ user_profile.cccd }}</td>
+                            </tr>
+                            <tr>
+                                <th>Ngày sinh:</th>
+                                <td>{{ user_profile.ngay_sinh }}</td>
+                            </tr>
+                            <tr>
+                                <th>Giới tính:</th>
+                                <td>{% if user_profile.gioi_tinh %}Nam{% else %}Nữ{% endif %}</td>
+                            </tr>
+                            <tr>
+                                <th>Quê quán:</th>
+                                <td>{{ user_profile.que_quan }}</td>
+                            </tr>
+                            <tr>
+                                <th>Số điện thoại:</th>
+                                <td>{{ user_profile.sdt }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}Quản lý đơn đăng ký - Quản lý KTX{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Quản lý đơn đăng ký</h2>
+    
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="donDangKyTable">
+                    <thead>
+                        <tr>
+                            <th>Mã đơn</th>
+                            <th>MSSV</th>
+                            <th>Họ tên</th>
+                            <th>Ngày đăng ký</th>
+                            <th>Loại phòng</th>
+                            <th>Dãy phòng</th>
+                            <th>Trạng thái</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for don in don_dang_ky_list %}
+                            <tr>
+                                <td>{{ don.ma_don }}</td>
+                                <td>{{ don.mssv.mssv }}</td>
+                                <td>{{ don.mssv.ho_ten }}</td>
+                                <td>{{ don.ngay_dang_ky }}</td>
+                                <td>{{ don.loai_phong }}</td>
+                                <td>{{ don.day_phong }}</td>
+                                <td>
+                                    {% if don.trang_thai == 'Chờ xử lý' %}
+                                        <span class="badge bg-warning text-dark">{{ don.trang_thai }}</span>
+                                    {% elif don.trang_thai == 'Đã duyệt' %}
+                                        <span class="badge bg-success">{{ don.trang_thai }}</span>
+                                    {% elif don.trang_thai == 'Từ chối' %}
+                                        <span class="badge bg-danger">{{ don.trang_thai }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ don.trang_thai }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if don.trang_thai == 'Chờ xử lý' %}
+                                        <a href="{% url 'xu_ly_don_dang_ky' ma_don=don.ma_don %}" class="btn btn-sm btn-primary">Xử lý</a>
+                                    {% else %}
+                                        <a href="{% url 'xu_ly_don_dang_ky' ma_don=don.ma_don %}" class="btn btn-sm btn-outline-secondary">Xem</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="8" class="text-center">Không có đơn đăng ký nào.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Thêm DataTable để tìm kiếm và phân trang
+    document.addEventListener('DOMContentLoaded', function() {
+        if (document.getElementById('donDangKyTable')) {
+            $('#donDangKyTable').DataTable({
+                "language": {
+                    "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Vietnamese.json"
+                },
+                "order": [[ 3, "desc" ]]
+            });
+        }
+    });
+</script>
+{% endblock %}

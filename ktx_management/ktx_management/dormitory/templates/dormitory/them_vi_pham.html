@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% block title %}Thêm vi phạm - Quản lý KTX{% endblock %}
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Thêm vi phạm</h2>
+    
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Thông tin sinh viên</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <tr>
+                            <th>MSSV:</th>
+                            <td>{{ sinh_vien.mssv }}</td>
+                        </tr>
+                        <tr>
+                            <th>Họ tên:</th>
+                            <td>{{ sinh_vien.ho_ten }}</td>
+                        </tr>
+                        <tr>
+                            <th>Phòng:</th>
+                            <td>{{ sinh_vien.so_phong }}</td>
+                        </tr>
+                        <tr>
+                            <th>Giường:</th>
+                            <td>{{ sinh_vien.so_giuong }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Thêm vi phạm mới</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="id_mo_ta" class="form-label">Mô tả vi phạm</label>
+                            {{ form.mo_ta }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_muc_do" class="form-label">Mức độ</label>
+                            <select name="muc_do" id="id_muc_do" class="form-select">
+                                <option value="Nhẹ">Nhẹ</option>
+                                <option value="Trung bình">Trung bình</option>
+                                <option value="Nghiêm trọng">Nghiêm trọng</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_hinh_thuc_xu_ly" class="form-label">Hình thức xử lý</label>
+                            <select name="hinh_thuc_xu_ly" id="id_hinh_thuc_xu_ly" class="form-select">
+                                <option value="Nhắc nhở">Nhắc nhở</option>
+                                <option value="Cảnh cáo">Cảnh cáo</option>
+                                <option value="Phạt tiền">Phạt tiền</option>
+                                <option value="Đình chỉ ở KTX">Đình chỉ ở KTX</option>
+                            </select>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Lưu vi phạm</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Lịch sử vi phạm</h5>
+                </div>
+                <div class="card-body">
+                    {% if vi_pham_list %}
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Mã vi phạm</th>
+                                <th>Mô tả</th>
+                                <th>Mức độ</th>
+                                <th>Hình thức xử lý</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for vp in vi_pham_list %}
+                            <tr>
+                                <td>{{ vp.ma_vi_pham }}</td>
+                                <td>{{ vp.mo_ta }}</td>
+                                <td>
+                                    <span class="badge {% if vp.muc_do == 'Nhẹ' %}bg-success{% elif vp.muc_do == 'Trung bình' %}bg-warning{% else %}bg-danger{% endif %}">
+                                        {{ vp.muc_do }}
+                                    </span>
+                                </td>
+                                <td>{{ vp.hinh_thuc_xu_ly }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="alert alert-info">Sinh viên chưa có vi phạm nào.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

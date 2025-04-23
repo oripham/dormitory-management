@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% block title %}Ghi số điện nước - Quản lý KTX{% endblock %}
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Ghi số điện nước - Phòng {{ phong.ma_phong }}</h2>
+    
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Thông tin phòng</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <tr>
+                            <th>Mã phòng:</th>
+                            <td>{{ phong.ma_phong }}</td>
+                        </tr>
+                        <tr>
+                            <th>Dãy phòng:</th>
+                            <td>{{ phong.day_phong.ten_day_phong }}</td>
+                        </tr>
+                        <tr>
+                            <th>Loại phòng:</th>
+                            <td>{{ phong.loai_phong.ten_loai_phong }}</td>
+                        </tr>
+                        <tr>
+                            <th>Số sinh viên:</th>
+                            <td>{{ phong.so_luong_sv }}/{{ phong.loai_phong.so_luong }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Ghi chỉ số điện nước</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="thang">Tháng:</label>
+                                    <select class="form-control" id="thang" name="thang" required>
+                                        {% for i in thang_options %}
+                                            <option value="{{ i }}" {% if i == thang_hien_tai %}selected{% endif %}>{{ i }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="nam">Năm:</label>
+                                    <select class="form-control" id="nam" name="nam" required>
+                                        {% for i in nam_options %}
+                                            <option value="{{ i }}" {% if i == nam_hien_tai %}selected{% endif %}>{{ i }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="chi_so_dien_cu">Chỉ số điện cũ:</label>
+                                    <input type="number" class="form-control" id="chi_so_dien_cu" name="chi_so_dien_cu" 
+                                           value="{{ chi_so_dien_cu }}" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="chi_so_dien_moi">Chỉ số điện mới:</label>
+                                    <input type="number" class="form-control" id="chi_so_dien_moi" name="chi_so_dien_moi" 
+                                           value="{{ chi_so_dien_moi|default:'' }}" required min="{{ chi_so_dien_cu }}">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="chi_so_nuoc_cu">Chỉ số nước cũ:</label>
+                                    <input type="number" class="form-control" id="chi_so_nuoc_cu" name="chi_so_nuoc_cu" 
+                                           value="{{ chi_so_nuoc_cu }}" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="chi_so_nuoc_moi">Chỉ số nước mới:</label>
+                                    <input type="number" class="form-control" id="chi_so_nuoc_moi" name="chi_so_nuoc_moi" 
+                                           value="{{ chi_so_nuoc_moi|default:'' }}" required min="{{ chi_so_nuoc_cu }}">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="ngay_ghi">Ngày ghi:</label>
+                                    <input type="date" class="form-control" id="ngay_ghi" name="ngay_ghi" 
+                                           value="{{ ngay_ghi|date:'Y-m-d' }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="ghi_chu">Ghi chú:</label>
+                                    <input type="text" class="form-control" id="ghi_chu" name="ghi_chu" 
+                                           value="{{ ghi_chu|default:'' }}">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'quan_ly_dien_nuoc' %}" class="btn btn-secondary">Quay lại</a>
+                            <button type="submit" class="btn btn-primary">Lưu chỉ số</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0">Lịch sử ghi chỉ số</h5>
+        </div>
+        <div class="card-body">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Tháng/Năm</th>
+                        <th>Chỉ số điện cũ</th>
+                        <th>Chỉ số điện mới</th>
+                        <th>Tiêu thụ điện</th>
+                        <th>Chỉ số nước cũ</th>
+                        <th>Chỉ số nước mới</th>
+                        <th>Tiêu thụ nước</th>
+                        <th>Thành tiền</th>
+                        <th>Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in lich_su %}
+                    <tr>
+                        <td>{{ log.thang }}/{{ log.nam }}</td>
+                        <td>{{ log.chi_so_dien_cu }}</td>
+                        <td>{{ log.chi_so_dien_moi }}</td>
+                        <td>{{ log.tieu_thu_dien }} kWh</td>
+                        <td>{{ log.chi_so_nuoc_cu }}</td>
+                        <td>{{ log.chi_so_nuoc_moi }}</td>
+                        <td>{{ log.tieu_thu_nuoc }} m³</td>
+                        <td>{{ log.thanh_tien|floatformat:0 }} đ</td>
+                        <td>
+                            {% if log.hoa_don %}
+                                {% if log.hoa_don.ngay_thanh_toan %}
+                                    <span class="badge bg-success">Đã thanh toán</span>
+                                {% else %}
+                                    <span class="badge bg-warning">Chưa thanh toán</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge bg-danger">Chưa tạo hóa đơn</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center">Chưa có dữ liệu</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

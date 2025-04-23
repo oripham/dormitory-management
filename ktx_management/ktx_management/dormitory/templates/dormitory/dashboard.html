@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Quản lý KTX{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Dashboard</h2>
+    
+    {% if role == 'manager' %}
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title">Tổng số sinh viên</h6>
+                                <h3 class="mb-0">{{ tong_sinh_vien }}</h3>
+                            </div>
+                            <i class="fas fa-user-graduate fa-3x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title">Tổng số phòng</h6>
+                                <h3 class="mb-0">{{ tong_phong }}</h3>
+                            </div>
+                            <i class="fas fa-door-open fa-3x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card bg-info text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title">Phòng trống</h6>
+                                <h3 class="mb-0">{{ phong_trong }}</h3>
+                            </div>
+                            <i class="fas fa-home fa-3x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Đơn đăng ký mới</h5>
+                        <span class="badge bg-primary">{{ don_dang_ky_moi }}</span>
+                    </div>
+                    <div class="card-body">
+                        <p>Bạn có {{ don_dang_ky_moi }} đơn đăng ký đang chờ xử lý.</p>
+                        <a href="{% url 'quan_ly_don_dang_ky' %}" class="btn btn-sm btn-primary">Xem chi tiết</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Báo hỏng mới</h5>
+                        <span class="badge bg-danger">{{ bao_hong_moi }}</span>
+                    </div>
+                    <div class="card-body">
+                        <p>Bạn có {{ bao_hong_moi }} báo hỏng đang chờ xử lý.</p>
+                        <a href="{% url 'quan_ly_bao_hong' %}" class="btn btn-sm btn-primary">Xem chi tiết</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Thống kê tổng quan</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="dashboardChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% elif role == 'student' %}
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Thông tin cá nhân</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table">
+                            <tr>
+                                <th style="width: 30%;">MSSV:</th>
+                                <td>{{ sinh_vien.mssv }}</td>
+                            </tr>
+                            <tr>
+                                <th>Họ và tên:</th>
+                                <td>{{ sinh_vien.ho_ten }}</td>
+                            </tr>
+                            <tr>
+                                <th>Phòng:</th>
+                                <td>{{ sinh_vien.so_phong }}</td>
+                            </tr>
+                            <tr>
+                                <th>Giường:</th>
+                                <td>{% if sinh_vien.so_giuong %}{{ sinh_vien.so_giuong }}{% else %}Chưa có{% endif %}</td>
+                            </tr>
+                            <tr>
+                                <th>Trạng thái:</th>
+                                <td><span class="badge bg-primary">{{ sinh_vien.trang_thai }}</span></td>
+                            </tr>
+                        </table>
+                        <div class="mt-3">
+                            <a href="{% url 'profile' %}" class="btn btn-sm btn-primary">Xem chi tiết</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Thông tin hợp đồng</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if hop_dong %}
+                            <table class="table">
+                                <tr>
+                                    <th style="width: 30%;">Mã hợp đồng:</th>
+                                    <td>{{ hop_dong.ma_hop_dong }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Phòng:</th>
+                                    <td>{{ hop_dong.ma_phong }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Ngày vào:</th>
+                                    <td>{{ hop_dong.ngay_vao }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Ngày hết hạn:</th>
+                                    <td>{{ hop_dong.ngay_ra }}</td>
+                                </tr>
+                            </table>
+                        {% else %}
+                            <p class="mb-0">Bạn chưa có hợp đồng KTX.</p>
+                            <div class="mt-3">
+                                <a href="{% url 'dang_ky_phong' %}" class="btn btn-sm btn-primary">Đăng ký phòng</a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Hóa đơn chưa thanh toán</h5>
+                        <span class="badge bg-warning text-dark">{{ hoa_don_chua_tt }}</span>
+                    </div>
+                    <div class="card-body">
+                        <p>Bạn có {{ hoa_don_chua_tt }} hóa đơn chưa thanh toán.</p>
+                        <a href="{% url 'xem_hoa_don' %}" class="btn btn-sm btn-primary">Xem chi tiết</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Vi phạm nội quy</h5>
+                        <span class="badge bg-danger">{{ vi_pham }}</span>
+                    </div>
+                    <div class="card-body">
+                        <p>Bạn có {{ vi_pham }} lần vi phạm nội quy KTX.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('dashboardChart').getContext('2d');
+        const dashboardChart = new Chart(ctx, {
+            type: 'bar', // Loại biểu đồ: bar, line, pie, etc.
+            data: {
+                labels: ['Sinh viên', 'Phòng', 'Phòng trống', 'Đơn đăng ký mới', 'Báo hỏng mới'],
+                datasets: [{
+                    label: 'Thống kê',
+                    data: [
+                        {{ tong_sinh_vien }},
+                        {{ tong_phong }},
+                        {{ phong_trong }},
+                        {{ don_dang_ky_moi }},
+                        {{ bao_hong_moi }}
+                    ],
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.6)',
+                        'rgba(75, 192, 192, 0.6)',
+                        'rgba(255, 206, 86, 0.6)',
+                        'rgba(153, 102, 255, 0.6)',
+                        'rgba(255, 99, 132, 0.6)'
+                    ],
+                    borderColor: [
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 99, 132, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

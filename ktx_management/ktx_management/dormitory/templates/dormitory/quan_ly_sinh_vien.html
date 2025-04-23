@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block title %}Quản lý sinh viên{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="text-center mb-4">Quản lý sinh viên</h1>
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover table-striped">
+            <thead class="table-primary text-center">
+                <tr>
+                    <th>MSSV</th>
+                    <th>Họ tên</th>
+                    <th>CCCD</th>
+                    <th>Ngày sinh</th>
+                    <th>Giới tính</th>
+                    <th>Quê quán</th>
+                    <th>Trạng thái</th>
+                    <th>Phòng</th>
+                    <th>Giường</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sinh_vien in sinh_vien_list %}
+                <tr>
+                    <td class="text-center">{{ sinh_vien.mssv }}</td>
+                    <td class="text-center">{{ sinh_vien.ho_ten }}</td>
+                    <td class="text-center">{{ sinh_vien.cccd }}</td>
+                    <td class="text-center">{{ sinh_vien.ngay_sinh|date:"d/m/Y" }}</td>
+                    <td class="text-center">
+                        {% if sinh_vien.gioi_tinh %}
+                            Nam
+                        {% else %}
+                            Nữ
+                        {% endif %}
+                    </td>
+                    <td class="text-center">{{ sinh_vien.que_quan }}</td>
+                    <td class="text-center">{{ sinh_vien.trang_thai }}</td>
+                    <td class="text-center">{{ sinh_vien.so_phong }}</td>
+                    <td class="text-center">{{ sinh_vien.so_giuong }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="text-center">Không có sinh viên nào.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

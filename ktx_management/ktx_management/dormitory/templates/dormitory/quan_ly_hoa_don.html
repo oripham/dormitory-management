@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block title %}Quản lý hóa đơn{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="text-center mb-4">Quản lý hóa đơn</h1>
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover table-striped" id="hoaDonTable">
+            <thead class="table-primary text-center">
+                <tr>
+                    <th>Mã hóa đơn</th>
+                    <th>Sinh viên</th>
+                    <th>Số tiền</th>
+                    <th>Trạng thái</th>
+                    <th>Ngày tạo</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for hoa_don in hoa_don_list %}
+                <tr>
+                    <td class="text-center">{{ hoa_don.ma_hoa_don }}</td>
+                    <td>{{ hoa_don.sinh_vien.ho_ten }} ({{ hoa_don.sinh_vien.mssv }})</td>
+                    <td class="text-end">{{ hoa_don.so_tien|floatformat:2 }} VND</td>
+                    <td class="text-center">
+                        {% if hoa_don.trang_thai == 'Chưa thanh toán' %}
+                            <span class="badge bg-warning text-dark">Chưa thanh toán</span>
+                        {% elif hoa_don.trang_thai == 'Đã thanh toán' %}
+                            <span class="badge bg-success">Đã thanh toán</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">{{ hoa_don.ngay_tao|date:"d/m/Y" }}</td>
+                    <td class="text-center">
+                        <a href="{% url 'chi_tiet_hoa_don' hoa_don.ma_hoa_don %}" class="btn btn-primary btn-sm">Chi tiết</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center">Không có hóa đơn nào.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Thêm DataTable để tìm kiếm và phân trang
+    document.addEventListener('DOMContentLoaded', function() {
+        if (document.getElementById('hoaDonTable')) {
+            $('#hoaDonTable').DataTable({
+                "language": {
+                    "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Vietnamese.json"
+                },
+                "order": [[ 4, "desc" ]]
+            });
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block title %}Quản lý phòng{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="text-center mb-4">Quản lý phòng</h1>
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover table-striped">
+            <thead class="table-primary text-center">
+                <tr>
+                    <th>Mã phòng</th>
+                    <th>Dãy phòng</th>
+                    <th>Số lượng sinh viên</th>
+                    <th>Loại phòng</th>
+                    <th>Trạng thái</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for phong in phong_list %}
+                <tr>
+                    <td class="text-center">{{ phong.ma_phong }}</td>
+                    <td class="text-center">{{ phong.day_phong.ten_day_phong }}</td>
+                    <td class="text-center">{{ phong.so_luong_sv }}</td>
+                    <td class="text-center">{{ phong.loai_phong }}</td>
+                    <td class="text-center">
+                        {% if phong.trang_thai == 'Trống' %}
+                            <span class="badge bg-success">Trống</span>
+                        {% elif phong.trang_thai == 'Đầy' %}
+                            <span class="badge bg-danger">Đầy</span>
+                        {% else %}
+                            <span class="badge bg-warning">Đang sửa chữa</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center">Không có phòng nào được tìm thấy.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
